@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabaseClient";
+import { useBusinessConfig } from "@/lib/client/useBusinessConfig";
 
 type Bar = { id: string; name: string; slug: string; logo_url: string | null };
 
@@ -12,6 +13,8 @@ export default function BarLandingPage() {
   const supabase = useMemo(() => supabaseBrowser(), []);
 
   const [bar, setBar] = useState<Bar | null>(null);
+  const { data: cfgData } = useBusinessConfig(slug);
+  const cfg = cfgData?.config;
 
   useEffect(() => {
     (async () => {
@@ -34,10 +37,11 @@ export default function BarLandingPage() {
         alignItems: "center",
         justifyContent: "center",
         background:
+          cfg?.branding.theme.background ||
           "radial-gradient(1200px 600px at 20% 10%, rgba(255,186,73,.35), transparent 60%)," +
-          "radial-gradient(900px 500px at 90% 20%, rgba(52,211,153,.30), transparent 55%)," +
-          "radial-gradient(900px 500px at 30% 90%, rgba(248,113,113,.25), transparent 55%)," +
-          "linear-gradient(180deg, #0b1220 0%, #0a0f1a 100%)",
+            "radial-gradient(900px 500px at 90% 20%, rgba(52,211,153,.30), transparent 55%)," +
+            "radial-gradient(900px 500px at 30% 90%, rgba(248,113,113,.25), transparent 55%)," +
+            "linear-gradient(180deg, #0b1220 0%, #0a0f1a 100%)",
         color: "#fff",
       }}
     >
@@ -67,19 +71,25 @@ export default function BarLandingPage() {
               flexShrink: 0,
             }}
           >
-            {bar?.logo_url ? (
+            {cfg?.branding.logo_url || bar?.logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={bar.logo_url} alt="logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img
+                src={(cfg?.branding.logo_url || bar?.logo_url) as string}
+                alt="logo"
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
             ) : (
               <span style={{ fontSize: 26 }}>🍻</span>
             )}
           </div>
 
           <div style={{ textAlign: "left" }}>
-            <div style={{ fontSize: 12, opacity: 0.8, letterSpacing: 0.4 }}>Bienvenido a</div>
-            <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.15 }}>{bar?.name ?? slug}</div>
+            <div style={{ fontSize: 12, opacity: 0.8, letterSpacing: 0.4 }}>
+              {cfg?.texts.landing.welcome_kicker ?? "Bienvenido a"}
+            </div>
+            <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.15 }}>{cfg?.branding.name || bar?.name || slug}</div>
             <div style={{ marginTop: 6, fontSize: 13, opacity: 0.85 }}>
-              Consigue sellos y gira la ruleta para premios.
+              {cfg?.texts.landing.subtitle ?? "Consigue sellos y gira la ruleta para premios."}
             </div>
           </div>
         </div>
@@ -99,7 +109,7 @@ export default function BarLandingPage() {
               cursor: "pointer",
             }}
           >
-            Entrar / Crear cuenta
+            {cfg?.texts.landing.cta_start ?? "Entrar / Crear cuenta"}
           </button>
 
           <button
@@ -115,24 +125,26 @@ export default function BarLandingPage() {
               fontWeight: 700,
             }}
           >
-            Ver mis sellos
+            {cfg?.texts.landing.cta_wallet ?? "Ver mis sellos"}
           </button>
 
-          <button
-            onClick={() => router.push(`/b/${slug}/spin`)}
-            style={{
-              width: "100%",
-              padding: 12,
-              borderRadius: 14,
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.14)",
-              color: "#fff",
-              cursor: "pointer",
-              fontWeight: 700,
-            }}
-          >
-            Girar la ruleta
-          </button>
+          {cfg?.features.wheel && cfg?.wheel.enabled && (
+            <button
+              onClick={() => router.push(`/b/${slug}/spin`)}
+              style={{
+                width: "100%",
+                padding: 12,
+                borderRadius: 14,
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.14)",
+                color: "#fff",
+                cursor: "pointer",
+                fontWeight: 700,
+              }}
+            >
+              {cfg?.texts.landing.cta_wheel ?? "Girar la ruleta"}
+            </button>
+          )}
         </div>
       </div>
     </main>

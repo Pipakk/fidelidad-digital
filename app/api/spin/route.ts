@@ -1,27 +1,8 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const PRIZES = [
-  "1 sello extra",
-  "Sigue jugando",
-  "5% dto próxima visita",
-  "Sigue jugando",
-  "Tapa gratis",
-  "Sigue jugando",
-];
-
-function pickPrize() {
-  const idx = Math.floor(Math.random() * PRIZES.length);
-  return PRIZES[idx];
-}
-
-function supabaseAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } }
-  );
-}
+import crypto from "crypto";
+import { supabaseServer } from "@/lib/serverSupabase";
+import { ConfigService } from "@/lib/config/ConfigService";
+import type { WheelSegment } from "@/lib/CONFIG_SCHEMA";
 
 export async function POST(req: Request) {
   try {
@@ -33,39 +14,61 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing params" }, { status: 400 });
     }
 
-    const sb = supabaseAdmin();
+    const sb = supabaseServer();
+    const { business: bar, config: cfg } = await ConfigService.getConfig(barSlug);
 
-    // 1) Bar
-    const { data: bar, error: barErr } = await sb
-      .from("bars")
-      .select("id,stamp_goal,reward_expires_days,reward_title,wheel_enabled")
-      .eq("slug", barSlug)
-      .single();
+    if (!bar) return NextResponse.json({ error: cfg.texts.api.bar_not_found }, { status: 404 });
+    if (cfg.wheel.enabled === false) return NextResponse.json({ error: cfg.texts.api.wheel_disabled }, { status: 403 });
 
-    if (barErr || !bar) return NextResponse.json({ error: "Bar not found" }, { status: 404 });
-    if (bar.wheel_enabled === false) return NextResponse.json({ error: "Wheel disabled" }, { status: 403 });
+    // cooldown
+    const cooldownDays = Number(cfg.wheel.cooldown_days ?? 0);
+    if (cooldownDays > 0) {
+      const { data: lastSpin } = await sb
+        .from("wheel_spins")
+        .select("created_at")
+        .eq("bar_id", bar.id)
+        .eq("customer_id", customerId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    // 2) Premio
-    const prize = pickPrize();
+      if (lastSpin?.created_at) {
+        const last = new Date(lastSpin.created_at);
+        const now = new Date();
+        const ms = now.getTime() - last.getTime();
+        const days = ms / (1000 * 60 * 60 * 24);
+        if (days < cooldownDays) {
+          return NextResponse.json({ error: cfg.texts.api.cooldown_active }, { status: 429 });
+        }
+      }
+    }
 
-    // 3) Registrar giro (opcional)
-    //    OJO: si tu columna reward_id NO permite null, avísame y lo adaptamos.
-    const spinId = cryptoRandomUUID();
+    const segments = (cfg.wheel.segments || []).filter((s) => s && s.enabled !== false);
+    const chosen = pickWeighted(segments);
+    if (!chosen) return NextResponse.json({ error: cfg.texts.api.wheel_disabled }, { status: 403 });
 
-    // 4) Caso: no gana nada
-    if (prize === "Sigue jugando") {
+    const spinId = crypto.randomUUID();
+    const label = chosen.label;
+
+    // none
+    if (chosen.type === "none") {
       await sb.from("wheel_spins").insert({
         id: spinId,
         bar_id: bar.id,
         customer_id: customerId,
         reward_id: null,
+        segment_id: chosen.id,
+        segment_label: chosen.label,
+        segment_type: chosen.type,
       });
-      return NextResponse.json({ prize, saved: false });
+      return NextResponse.json({ prize: label, segmentId: chosen.id, type: chosen.type, saved: false });
     }
 
-    // 5) Caso: "1 sello extra" => sumar sello en memberships
-    if (prize === "1 sello extra") {
-      // asegurar membership
+    // stamp
+    if (chosen.type === "stamp") {
+      const add = Number.isFinite(chosen.value as any) ? Number(chosen.value) : 1;
+      const stampsToAdd = Math.max(0, Math.trunc(add));
+
       const { data: membership, error: memErr } = await sb
         .from("memberships")
         .select("id,stamps_count")
@@ -85,10 +88,9 @@ export async function POST(req: Request) {
       }
 
       const current = membership?.stamps_count ?? 0;
-
       const { data: updated, error: updErr } = await sb
         .from("memberships")
-        .update({ stamps_count: current + 1, updated_at: new Date().toISOString() })
+        .update({ stamps_count: current + stampsToAdd, updated_at: new Date().toISOString() })
         .eq("bar_id", bar.id)
         .eq("customer_id", customerId)
         .select("stamps_count")
@@ -96,25 +98,29 @@ export async function POST(req: Request) {
 
       if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
 
-      // registrar giro
       await sb.from("wheel_spins").insert({
         id: spinId,
         bar_id: bar.id,
         customer_id: customerId,
         reward_id: null,
+        segment_id: chosen.id,
+        segment_label: chosen.label,
+        segment_type: chosen.type,
       });
 
       return NextResponse.json({
-        prize,
+        prize: label,
+        segmentId: chosen.id,
+        type: chosen.type,
         saved: true,
-        stampsAdded: 1,
-        stamps: updated?.stamps_count ?? current + 1,
+        stampsAdded: stampsToAdd,
+        stamps: updated?.stamps_count ?? current + stampsToAdd,
       });
     }
 
-    // 6) Caso: premio normal => crear reward
+    // reward
     const expires = new Date();
-    const days = Number(bar.reward_expires_days ?? 30);
+    const days = Number(cfg.rewards.expires_days ?? 30);
     expires.setDate(expires.getDate() + (Number.isFinite(days) ? days : 30));
 
     const { data: reward, error: rErr } = await sb
@@ -123,7 +129,7 @@ export async function POST(req: Request) {
         bar_id: bar.id,
         customer_id: customerId,
         source: "wheel",
-        title: prize,
+        title: label,
         status: "active",
         expires_at: expires.toISOString(),
       })
@@ -137,17 +143,29 @@ export async function POST(req: Request) {
       bar_id: bar.id,
       customer_id: customerId,
       reward_id: reward.id,
+      segment_id: chosen.id,
+      segment_label: chosen.label,
+      segment_type: chosen.type,
     });
 
-    return NextResponse.json({ prize, saved: true, reward });
+    return NextResponse.json({ prize: label, segmentId: chosen.id, type: chosen.type, saved: true, reward });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "Server error" }, { status: 500 });
   }
 }
 
-// Node 18+ tiene crypto.randomUUID en global en muchos entornos,
-// pero lo dejo compatible por si acaso.
-function cryptoRandomUUID() {
-  // @ts-ignore
-  return (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`);
+function pickWeighted(segments: WheelSegment[]) {
+  const enabled = (segments || []).filter((s) => s && s.enabled !== false);
+  let total = 0;
+  for (const s of enabled) total += Math.max(0, Math.trunc(Number(s.weight ?? 0)));
+  if (!Number.isFinite(total) || total <= 0) return null;
+
+  let r = Math.random() * total;
+  for (const s of enabled) {
+    const w = Math.max(0, Math.trunc(Number(s.weight ?? 0)));
+    if (w <= 0) continue;
+    r -= w;
+    if (r < 0) return s;
+  }
+  return enabled[enabled.length - 1] ?? null;
 }

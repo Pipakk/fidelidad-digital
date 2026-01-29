@@ -1,18 +1,7 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import crypto from "crypto";
-
-function sha256(s: string) {
-  return crypto.createHash("sha256").update(s).digest("hex");
-}
-
-function supabaseAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } }
-  );
-}
+import { supabaseServer } from "@/lib/serverSupabase";
+import { ConfigService } from "@/lib/config/ConfigService";
+import { sha256Hex } from "@/lib/security/pin";
 
 export async function POST(req: Request) {
   try {
@@ -32,12 +21,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing params" }, { status: 400 });
     }
 
-    const sb = supabaseAdmin();
+    const sb = supabaseServer();
+    const { business: bar, config: cfg } = await ConfigService.getConfig(barSlug);
+    if (!bar) return NextResponse.json({ error: cfg.texts.api.bar_not_found }, { status: 404 });
 
-    const { data: bar, error: barErr } = await sb.from("bars").select("id").eq("slug", barSlug).single();
-    if (barErr || !bar) return NextResponse.json({ error: "Bar not found" }, { status: 404 });
-
-    const pinHash = sha256(staffPin);
+    const pinHash = sha256Hex(staffPin);
     const { data: staff, error: staffErr } = await sb
       .from("staff_users")
       .select("id")
@@ -46,7 +34,7 @@ export async function POST(req: Request) {
       .maybeSingle();
 
     if (staffErr) return NextResponse.json({ error: staffErr.message }, { status: 500 });
-    if (!staff) return NextResponse.json({ error: "Invalid PIN" }, { status: 401 });
+    if (!staff) return NextResponse.json({ error: cfg.texts.api.invalid_pin }, { status: 401 });
 
     const { data: reward, error: rewardErr } = await sb
       .from("rewards")
@@ -55,11 +43,11 @@ export async function POST(req: Request) {
       .eq("bar_id", bar.id)
       .single();
 
-    if (rewardErr || !reward) return NextResponse.json({ error: "Reward not found" }, { status: 404 });
-    if (reward.status !== "active") return NextResponse.json({ error: "Reward not active" }, { status: 409 });
+    if (rewardErr || !reward) return NextResponse.json({ error: cfg.texts.api.reward_not_found }, { status: 404 });
+    if (reward.status !== "active") return NextResponse.json({ error: cfg.texts.api.reward_not_active }, { status: 409 });
 
     if (body.customerId && reward.customer_id !== body.customerId) {
-      return NextResponse.json({ error: "Reward does not belong to this user" }, { status: 403 });
+      return NextResponse.json({ error: cfg.texts.api.reward_wrong_user }, { status: 403 });
     }
 
     const { error: updErr } = await sb.from("rewards").update({ status: "redeemed" }).eq("id", rewardId);

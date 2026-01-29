@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabaseClient";
 import { useRouter, useParams } from "next/navigation";
+import { useBusinessConfig } from "@/lib/client/useBusinessConfig";
 
 type Bar = { id: string; name: string; slug: string; logo_url: string | null };
 
@@ -12,6 +13,8 @@ export default function LoginPage() {
   const { slug } = useParams<{ slug: string }>();
 
   const [bar, setBar] = useState<Bar | null>(null);
+  const { data: cfgData } = useBusinessConfig(slug);
+  const cfg = cfgData?.config;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,8 +33,8 @@ export default function LoginPage() {
   }, [slug]);
 
   async function submit() {
-    if (!email || !password) return alert("Rellena email y contraseña");
-    if (password.length < 6) return alert("La contraseña debe tener al menos 6 caracteres");
+    if (!email || !password) return alert(cfg?.texts.login.validation_missing ?? "Rellena email y contraseña");
+    if (password.length < 6) return alert(cfg?.texts.login.validation_password_len ?? "La contraseña debe tener al menos 6 caracteres");
 
     setLoading(true);
 
@@ -68,10 +71,11 @@ export default function LoginPage() {
         alignItems: "center",
         justifyContent: "center",
         background:
+          cfg?.branding.theme.background ||
           "radial-gradient(1200px 600px at 20% 10%, rgba(255,186,73,.35), transparent 60%)," +
-          "radial-gradient(900px 500px at 90% 20%, rgba(52,211,153,.30), transparent 55%)," +
-          "radial-gradient(900px 500px at 30% 90%, rgba(248,113,113,.25), transparent 55%)," +
-          "linear-gradient(180deg, #0b1220 0%, #0a0f1a 100%)",
+            "radial-gradient(900px 500px at 90% 20%, rgba(52,211,153,.30), transparent 55%)," +
+            "radial-gradient(900px 500px at 30% 90%, rgba(248,113,113,.25), transparent 55%)," +
+            "linear-gradient(180deg, #0b1220 0%, #0a0f1a 100%)",
         color: "#fff",
       }}
     >
@@ -102,21 +106,25 @@ export default function LoginPage() {
               flexShrink: 0,
             }}
           >
-            {bar?.logo_url ? (
+            {cfg?.branding.logo_url || bar?.logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={bar.logo_url} alt="logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img
+                src={(cfg?.branding.logo_url || bar?.logo_url) as string}
+                alt="logo"
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
             ) : (
               <span style={{ fontSize: 26 }}>🍻</span>
             )}
           </div>
 
           <div style={{ textAlign: "left" }}>
-            <div style={{ fontSize: 12, opacity: 0.8, letterSpacing: 0.4 }}>Acceso</div>
+            <div style={{ fontSize: 12, opacity: 0.8, letterSpacing: 0.4 }}>{cfg?.texts.login.title_kicker ?? "Acceso"}</div>
             <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.15 }}>
-              {bar?.name ?? "Tu bar"}
+              {cfg?.branding.name || bar?.name || "Tu bar"}
             </div>
             <div style={{ marginTop: 4, fontSize: 13, opacity: 0.85 }}>
-              Guarda tu wallet y canjea premios.
+              {cfg?.texts.login.subtitle ?? "Guarda tu wallet y canjea premios."}
             </div>
           </div>
         </div>
@@ -147,7 +155,7 @@ export default function LoginPage() {
               opacity: mode === "signup" ? 1 : 0.85,
             }}
           >
-            Crear cuenta
+            {cfg?.texts.login.tab_signup ?? "Crear cuenta"}
           </button>
 
           <button
@@ -164,7 +172,7 @@ export default function LoginPage() {
               opacity: mode === "login" ? 1 : 0.85,
             }}
           >
-            Entrar
+            {cfg?.texts.login.tab_login ?? "Entrar"}
           </button>
         </div>
 
@@ -177,11 +185,13 @@ export default function LoginPage() {
             border: "1px solid rgba(255,255,255,0.10)",
           }}
         >
-          <label style={{ display: "block", fontSize: 13, opacity: 0.9, marginBottom: 6 }}>Email</label>
+          <label style={{ display: "block", fontSize: 13, opacity: 0.9, marginBottom: 6 }}>
+            {cfg?.texts.login.email_label ?? "Email"}
+          </label>
           <input
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="tu@email.com"
+            placeholder={cfg?.texts.login.email_placeholder ?? "tu@email.com"}
             autoComplete="email"
             style={{
               width: "100%",
@@ -196,13 +206,13 @@ export default function LoginPage() {
           />
 
           <label style={{ display: "block", fontSize: 13, opacity: 0.9, margin: "12px 0 6px" }}>
-            Contraseña
+            {cfg?.texts.login.password_label ?? "Contraseña"}
           </label>
           <input
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             type="password"
-            placeholder="********"
+            placeholder={cfg?.texts.login.password_placeholder ?? "********"}
             autoComplete={mode === "signup" ? "new-password" : "current-password"}
             style={{
               width: "100%",
@@ -236,7 +246,11 @@ export default function LoginPage() {
               touchAction: "manipulation",
             }}
           >
-            {loading ? "Procesando..." : mode === "signup" ? "Crear cuenta" : "Entrar"}
+            {loading
+              ? cfg?.texts.login.processing ?? "Procesando..."
+              : mode === "signup"
+                ? cfg?.texts.login.submit_signup ?? "Crear cuenta"
+                : cfg?.texts.login.submit_login ?? "Entrar"}
           </button>
 
           <button
@@ -258,9 +272,9 @@ export default function LoginPage() {
           </button>
 
           <div style={{ marginTop: 12, fontSize: 12, opacity: 0.75, lineHeight: 1.3 }}>
-            MVP sin SMS: acceso con email y contraseña.
+            {cfg?.texts.login.hint_line_1 ?? "MVP sin SMS: acceso con email y contraseña."}
             <br />
-            Consejo: usa una contraseña de 8+ caracteres.
+            {cfg?.texts.login.hint_line_2 ?? "Consejo: usa una contraseña de 8+ caracteres."}
           </div>
         </div>
       </div>

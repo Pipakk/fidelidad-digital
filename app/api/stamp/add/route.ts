@@ -1,18 +1,7 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import crypto from "crypto";
-
-function sha256(s: string) {
-  return crypto.createHash("sha256").update(s).digest("hex");
-}
-
-function supabaseAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!, // <- CLAVE
-    { auth: { persistSession: false } }
-  );
-}
+import { supabaseServer } from "@/lib/serverSupabase";
+import { ConfigService } from "@/lib/config/ConfigService";
+import { sha256Hex } from "@/lib/security/pin";
 
 export async function POST(req: Request) {
   try {
@@ -31,19 +20,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing params" }, { status: 400 });
     }
 
-    const sb = supabaseAdmin();
-
-    // 1) bar config
-    const { data: bar, error: barErr } = await sb
-      .from("bars")
-      .select("id,stamp_goal,stamp_daily_limit,reward_title,reward_expires_days")
-      .eq("slug", barSlug)
-      .single();
-
-    if (barErr || !bar) return NextResponse.json({ error: "Bar not found" }, { status: 404 });
+    const sb = supabaseServer();
+    const { business: bar, config: cfg } = await ConfigService.getConfig(barSlug);
+    if (!bar) return NextResponse.json({ error: cfg.texts.api.bar_not_found }, { status: 404 });
 
     // 2) validar PIN staff
-    const pinHash = sha256(staffPin);
+    const pinHash = sha256Hex(staffPin);
     const { data: staff, error: staffErr } = await sb
       .from("staff_users")
       .select("id")
@@ -52,10 +34,10 @@ export async function POST(req: Request) {
       .maybeSingle();
 
     if (staffErr) return NextResponse.json({ error: staffErr.message }, { status: 500 });
-    if (!staff) return NextResponse.json({ error: "Invalid PIN" }, { status: 401 });
+    if (!staff) return NextResponse.json({ error: cfg.texts.api.invalid_pin }, { status: 401 });
 
     // 3) límite diario (si stamp_daily_limit viene null -> no limita)
-    const limit = Number(bar.stamp_daily_limit ?? 0);
+    const limit = Number(cfg.stamps.daily_limit ?? 0);
     if (limit > 0) {
       const since = new Date();
       since.setHours(0, 0, 0, 0);
@@ -69,7 +51,7 @@ export async function POST(req: Request) {
 
       if (countErr) return NextResponse.json({ error: countErr.message }, { status: 500 });
       if ((count ?? 0) >= limit) {
-        return NextResponse.json({ error: "Daily limit reached" }, { status: 429 });
+        return NextResponse.json({ error: cfg.texts.api.daily_limit_reached }, { status: 429 });
       }
     }
 
@@ -117,13 +99,13 @@ export async function POST(req: Request) {
     let createdReward: any = null;
 
     // 5) si completa objetivo, crear reward y reset sellos
-    const goal = Number(bar.stamp_goal ?? 0);
+    const goal = Number(cfg.stamps.goal ?? 0);
     if (goal > 0 && updated.stamps_count >= goal) {
-      const expiresDays = Number(bar.reward_expires_days ?? 30);
+      const expiresDays = Number(cfg.rewards.expires_days ?? 30);
       const expires = new Date();
       expires.setDate(expires.getDate() + (Number.isFinite(expiresDays) ? expiresDays : 30));
 
-      const title = bar.reward_title || "Premio por sellos";
+      const title = cfg.stamps.reward_title || bar.reward_title || "Premio por sellos";
 
       const { data: reward, error: rErr } = await sb
         .from("rewards")

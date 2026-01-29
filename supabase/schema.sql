@@ -11,8 +11,27 @@ create table if not exists public.bars (
   stamp_daily_limit int not null default 1,
   wheel_enabled boolean not null default true,
   wheel_cooldown_days int not null default 7,
+  -- Multi-tenant parametrization: canonical config (jsonb)
+  config jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now(),
   created_at timestamptz not null default now()
 );
+
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists set_bars_updated_at on public.bars;
+create trigger set_bars_updated_at
+before update on public.bars
+for each row
+execute function public.set_updated_at();
 
 create table if not exists public.staff_users (
   id uuid primary key default gen_random_uuid(),
@@ -61,9 +80,68 @@ create table if not exists public.wheel_spins (
   bar_id uuid not null references public.bars(id) on delete cascade,
   customer_id uuid not null references auth.users(id) on delete cascade,
   reward_id uuid references public.rewards(id) on delete set null,
+  segment_id text,
+  segment_label text,
+  segment_type text,
   created_at timestamptz not null default now()
 );
 
 create index if not exists stamp_events_idx on public.stamp_events (bar_id, customer_id, created_at desc);
 create index if not exists rewards_idx on public.rewards (bar_id, customer_id, status);
 create index if not exists wheel_spins_idx on public.wheel_spins (bar_id, customer_id, created_at desc);
+
+-- ------------------------------------------------------------
+-- RLS (recommended). Keep policies minimal but non-breaking.
+-- ------------------------------------------------------------
+
+alter table public.bars enable row level security;
+alter table public.customers enable row level security;
+alter table public.memberships enable row level security;
+alter table public.rewards enable row level security;
+
+-- Public read for business discovery/config.
+drop policy if exists "bars_public_read" on public.bars;
+create policy "bars_public_read"
+on public.bars
+for select
+to anon, authenticated
+using (true);
+
+-- Customers: a user can read/insert/update their own profile.
+drop policy if exists "customers_self_read" on public.customers;
+create policy "customers_self_read"
+on public.customers
+for select
+to authenticated
+using (id = auth.uid());
+
+drop policy if exists "customers_self_upsert" on public.customers;
+create policy "customers_self_upsert"
+on public.customers
+for insert
+to authenticated
+with check (id = auth.uid());
+
+drop policy if exists "customers_self_update" on public.customers;
+create policy "customers_self_update"
+on public.customers
+for update
+to authenticated
+using (id = auth.uid())
+with check (id = auth.uid());
+
+-- Memberships: a user can read their own memberships.
+drop policy if exists "memberships_self_read" on public.memberships;
+create policy "memberships_self_read"
+on public.memberships
+for select
+to authenticated
+using (customer_id = auth.uid());
+
+-- Rewards: a user can read their own rewards.
+drop policy if exists "rewards_self_read" on public.rewards;
+create policy "rewards_self_read"
+on public.rewards
+for select
+to authenticated
+using (customer_id = auth.uid());

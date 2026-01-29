@@ -4,27 +4,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
 import { supabaseBrowser } from "@/lib/supabaseClient";
+import { useBusinessConfig } from "@/lib/client/useBusinessConfig";
+import type { WheelSegment } from "@/lib/CONFIG_SCHEMA";
 
-const PRIZES = [
-  "1 sello extra",
-  "Sigue jugando",
-  "5% dto próxima visita",
-  "Sigue jugando",
-  "Tapa gratis",
-  "Sigue jugando",
-];
-
-const SEGMENT_COLORS = ["#f59e0b", "#fde68a", "#34d399", "#fde68a", "#f87171", "#fde68a"];
-const SEGMENT_COUNT = PRIZES.length;
-const SEGMENT_ANGLE = 360 / SEGMENT_COUNT;
-
-function buildConicGradient() {
-  const step = 360 / PRIZES.length;
+function buildConicGradient(labels: string[], colors: string[]) {
+  const step = 360 / Math.max(1, labels.length);
   const stops: string[] = [];
-  for (let i = 0; i < PRIZES.length; i++) {
+  for (let i = 0; i < labels.length; i++) {
     const from = i * step;
     const to = (i + 1) * step;
-    stops.push(`${SEGMENT_COLORS[i % SEGMENT_COLORS.length]} ${from}deg ${to}deg`);
+    stops.push(`${colors[i % colors.length]} ${from}deg ${to}deg`);
   }
   return `conic-gradient(${stops.join(", ")})`;
 }
@@ -81,6 +70,8 @@ type Bar = { id: string; name: string; slug: string; logo_url: string | null };
 
 type SpinResponse = {
   prize: string;
+  segmentId?: string;
+  type?: "none" | "reward" | "stamp";
   saved?: boolean;
   reward?: { id: string; title: string; expires_at?: string };
   error?: string;
@@ -94,6 +85,7 @@ export default function SpinPage() {
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [resultType, setResultType] = useState<SpinResponse["type"]>(undefined);
 
   const [saved, setSaved] = useState<boolean | null>(null);
   const [rewardId, setRewardId] = useState<string | null>(null);
@@ -101,10 +93,26 @@ export default function SpinPage() {
   const [wheelSize, setWheelSize] = useState(320);
   const [bar, setBar] = useState<Bar | null>(null);
 
+  const { data: cfgData } = useBusinessConfig(slug);
+  const cfg = cfgData?.config;
+
   const { tick, win } = useWheelSounds();
   const tickIntervalRef = useRef<number | null>(null);
 
-  const wheelBg = useMemo(() => buildConicGradient(), []);
+  const segments: WheelSegment[] = useMemo(() => {
+    const raw = cfg?.wheel?.segments || [];
+    const enabled = raw.filter((s) => s && s.enabled !== false);
+    return enabled.length >= 4 ? enabled : raw;
+  }, [cfg?.wheel?.segments]);
+
+  const labels = useMemo(() => segments.map((s) => s.label), [segments]);
+  const colors = useMemo(() => {
+    const c = cfg?.wheel?.ui?.segment_colors;
+    return c && c.length >= 2 ? c : ["#f59e0b", "#fde68a", "#34d399", "#fde68a", "#f87171", "#fde68a"];
+  }, [cfg?.wheel?.ui?.segment_colors]);
+
+  const segmentAngle = useMemo(() => 360 / Math.max(1, labels.length), [labels.length]);
+  const wheelBg = useMemo(() => buildConicGradient(labels, colors), [labels, colors]);
 
   // Responsive wheel size
   useEffect(() => {
@@ -148,6 +156,7 @@ export default function SpinPage() {
 
     setSpinning(true);
     setResult(null);
+    setResultType(undefined);
     setSaved(null);
     setRewardId(null);
 
@@ -155,7 +164,7 @@ export default function SpinPage() {
     const customerId = auth.user?.id;
 
     if (!customerId) {
-      alert("Necesitas iniciar sesión");
+      alert(cfg?.texts.wheel.need_login ?? "Necesitas iniciar sesión");
       setSpinning(false);
       router.push(`/b/${slug}/login`);
       return;
@@ -170,13 +179,17 @@ export default function SpinPage() {
     const data = (await res.json()) as SpinResponse;
 
     if (!res.ok) {
-      alert(data.error || "Error");
+      alert(data.error || cfg?.texts.common.error_generic || "Error");
       setSpinning(false);
       return;
     }
 
     const prize = data.prize as string;
-    const prizeIndex = PRIZES.indexOf(prize);
+    const segId = data.segmentId;
+    const prizeIndex =
+      (segId ? segments.findIndex((s) => s.id === segId) : -1) >= 0
+        ? (segments.findIndex((s) => s.id === segId) as number)
+        : labels.indexOf(prize);
 
     if (prizeIndex === -1) {
       alert(`Premio desconocido: ${prize}`);
@@ -193,7 +206,7 @@ export default function SpinPage() {
     tickIntervalRef.current = window.setInterval(() => tick(), 120);
 
     // rotación al centro del segmento bajo flecha superior
-    const targetAngle = 360 * 5 + (360 - prizeIndex * SEGMENT_ANGLE - SEGMENT_ANGLE / 2);
+    const targetAngle = 360 * 5 + (360 - prizeIndex * segmentAngle - segmentAngle / 2);
     setRotation(targetAngle);
 
     window.setTimeout(() => {
@@ -201,8 +214,9 @@ export default function SpinPage() {
       tickIntervalRef.current = null;
 
       setResult(prize);
+      setResultType(data.type);
 
-      if (prize !== "Sigue jugando") {
+      if (data.type && data.type !== "none") {
         win();
         fireConfetti();
       }
@@ -211,7 +225,7 @@ export default function SpinPage() {
     }, 4200);
   }
 
-  const isWin = result && result !== "Sigue jugando";
+  const isWin = Boolean(result && resultType && resultType !== "none");
 
   return (
     <main
@@ -222,10 +236,11 @@ export default function SpinPage() {
         alignItems: "center",
         justifyContent: "center",
         background:
+          cfg?.branding.theme.background ||
           "radial-gradient(1200px 600px at 20% 10%, rgba(255,186,73,.35), transparent 60%)," +
-          "radial-gradient(900px 500px at 90% 20%, rgba(52,211,153,.30), transparent 55%)," +
-          "radial-gradient(900px 500px at 30% 90%, rgba(248,113,113,.25), transparent 55%)," +
-          "linear-gradient(180deg, #0b1220 0%, #0a0f1a 100%)",
+            "radial-gradient(900px 500px at 90% 20%, rgba(52,211,153,.30), transparent 55%)," +
+            "radial-gradient(900px 500px at 30% 90%, rgba(248,113,113,.25), transparent 55%)," +
+            "linear-gradient(180deg, #0b1220 0%, #0a0f1a 100%)",
         color: "#fff",
       }}
     >
@@ -256,17 +271,23 @@ export default function SpinPage() {
               flexShrink: 0,
             }}
           >
-            {bar?.logo_url ? (
+            {cfg?.branding.logo_url || bar?.logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={bar.logo_url} alt="logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img
+                src={(cfg?.branding.logo_url || bar?.logo_url) as string}
+                alt="logo"
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
             ) : (
               <span style={{ fontSize: 22 }}>🍻</span>
             )}
           </div>
 
           <div style={{ textAlign: "left" }}>
-            <div style={{ fontSize: 12, opacity: 0.8, letterSpacing: 0.4 }}>Ruleta de premios</div>
-            <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.15 }}>{bar?.name ?? "Tu bar"}</div>
+            <div style={{ fontSize: 12, opacity: 0.8, letterSpacing: 0.4 }}>
+              {cfg?.texts.wheel.title_kicker ?? "Ruleta de premios"}
+            </div>
+            <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.15 }}>{cfg?.branding.name || bar?.name || "Tu bar"}</div>
           </div>
 
           <div style={{ marginLeft: "auto" }}>
@@ -281,7 +302,7 @@ export default function SpinPage() {
                 cursor: "pointer",
               }}
             >
-              Mis premios
+              {cfg?.texts.wheel.cta_wallet ?? "Mis premios"}
             </button>
           </div>
         </div>
@@ -322,8 +343,8 @@ export default function SpinPage() {
               }}
             >
               {/* Etiquetas */}
-              {PRIZES.map((label, i) => {
-                const mid = i * SEGMENT_ANGLE + SEGMENT_ANGLE / 2;
+              {labels.map((label, i) => {
+                const mid = i * segmentAngle + segmentAngle / 2;
                 const needsFlip = mid > 90 && mid < 270;
                 const tangential = 90 + (needsFlip ? 180 : 0);
 
@@ -423,7 +444,7 @@ export default function SpinPage() {
               touchAction: "manipulation",
             }}
           >
-            {spinning ? "Girando..." : "Girar ruleta"}
+            {spinning ? cfg?.texts.wheel.spinning ?? "Girando..." : cfg?.texts.wheel.cta_spin ?? "Girar ruleta"}
           </button>
 
           {result && (
@@ -437,7 +458,7 @@ export default function SpinPage() {
                 textAlign: "left",
               }}
             >
-              <div style={{ fontSize: 12, opacity: 0.85 }}>Resultado</div>
+              <div style={{ fontSize: 12, opacity: 0.85 }}>{cfg?.texts.wheel.result_title ?? "Resultado"}</div>
               <div style={{ fontSize: 18, fontWeight: 800, marginTop: 4 }}>
                 {isWin ? "🎉 " : "😅 "}
                 {result}
@@ -446,9 +467,11 @@ export default function SpinPage() {
               {isWin && (
                 <div style={{ fontSize: 13, opacity: 0.88, marginTop: 6 }}>
                   {saved ? (
-                    <>✅ Premio guardado en tu wallet. (ID: {rewardId?.slice(0, 8) ?? "—"})</>
+                    <>
+                      {cfg?.texts.wheel.saved_ok ?? "✅ Premio guardado en tu wallet."} (ID: {rewardId?.slice(0, 8) ?? "—"})
+                    </>
                   ) : (
-                    <>⚠️ No se ha podido guardar el premio. (revisa /api/spin)</>
+                    <>{cfg?.texts.wheel.saved_fail ?? "⚠️ No se ha podido guardar el premio. (revisa /api/spin)"}</>
                   )}
                 </div>
               )}
@@ -468,7 +491,7 @@ export default function SpinPage() {
                     fontWeight: 800,
                   }}
                 >
-                  Ver mi premio en Wallet
+                  {cfg?.texts.wheel.cta_view_reward ?? "Ver mi premio en Wallet"}
                 </button>
               )}
             </div>
