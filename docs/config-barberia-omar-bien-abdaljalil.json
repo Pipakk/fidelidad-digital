@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "branding": {
+    "name": "Barbería Omar Bien Abdaljalil",
+    "logo_url": null,
+    "favicon_url": null,
+    "theme": {
+      "background": "",
+      "primary": "#1a1a1a",
+      "secondary": "#c9a227",
+      "text": "#ffffff"
+    }
+  },
+  "seo": {
+    "title": "Barbería Omar Bien Abdaljalil · Fidelización",
+    "description": "Acumula sellos por cada corte y gana premios. Sin app, solo QR."
+  },
+  "features": {
+    "wheel": true,
+    "stamps": true,
+    "wallet": true,
+    "login": true,
+    "admin": true
+  },
+  "stamps": {
+    "goal": 6,
+    "daily_limit": 0,
+    "reward_title": "Corte gratis"
+  },
+  "rewards": {
+    "expires_days": 30
+  },
+  "wheel": {
+    "enabled": true,
+    "cooldown_days": 0,
+    "ui": {
+      "segment_colors": ["#c9a227", "#2d2d2d", "#c9a227", "#2d2d2d", "#8b7355"]
+    },
+    "segments": [
+      { "id": "stamp_1", "enabled": true, "label": "1 sello extra", "type": "stamp", "value": 1, "weight": 3 },
+      { "id": "none_1", "enabled": true, "label": "Sigue jugando", "type": "none", "weight": 5 },
+      { "id": "reward_1", "enabled": true, "label": "5% dto próxima visita", "type": "reward", "weight": 2 },
+      { "id": "reward_2", "enabled": true, "label": "Lavado gratis", "type": "reward", "weight": 1 },
+      { "id": "reward_3", "enabled": true, "label": "Afeitado gratis", "type": "reward", "weight": 1 }
+    ]
+  },
+  "texts": {
+    "common": {
+      "loading": "Cargando...",
+      "back": "Volver",
+      "error_generic": "Ha ocurrido un error"
+    },
+    "landing": {
+      "welcome_kicker": "Bienvenido a",
+      "subtitle": "Acumula un sello por cada corte y canjea premios. Sin app, solo escanea el QR.",
+      "cta_start": "Acceder",
+      "cta_wallet": "Mi wallet",
+      "cta_wheel": "Ruleta",
+      "cta_premium": "Ver premios",
+      "logout": "Cerrar sesión",
+      "privacy_line_1": "Al continuar aceptas la política de privacidad del establecimiento.",
+      "privacy_line_2": "Añade esta página a tu pantalla de inicio para acceder como app.",
+      "error_not_found": "Barbería no encontrada"
+    },
+    "login": {
+      "title_kicker": "Acceso",
+      "subtitle": "Regístrate o entra para guardar tus sellos y premios.",
+      "tab_signup": "Crear cuenta",
+      "tab_login": "Entrar",
+      "email_label": "Email",
+      "email_placeholder": "tu@email.com",
+      "password_label": "Contraseña",
+      "password_placeholder": "********",
+      "submit_signup": "Crear cuenta",
+      "submit_login": "Entrar",
+      "processing": "Procesando...",
+      "hint_line_1": "Acceso con email y contraseña.",
+      "hint_line_2": "Usa una contraseña de 8+ caracteres.",
+      "validation_missing": "Rellena email y contraseña",
+      "validation_password_len": "La contraseña debe tener al menos 6 caracteres"
+    },
+    "wallet": {
+      "title_kicker": "Tu wallet",
+      "section_stamps": "Tus sellos",
+      "reward_for_completion": "Al completar:",
+      "staff_actions_title": "Acciones (barbero / recepción)",
+      "staff_actions_subtitle": "Introduce el PIN del local para validar un corte o canjear un premio.",
+      "pin_placeholder": "PIN",
+      "pin_missing_add_stamp": "Introduce el PIN para añadir un sello",
+      "pin_missing_redeem": "Introduce el PIN para canjear el premio",
+      "add_stamp": "Añadir 1 sello",
+      "processing": "Procesando...",
+      "rewards_title": "Premios activos",
+      "rewards_empty": "Aún no tienes premios activos.",
+      "rewards_expires_at": "Caduca:",
+      "rewards_ready": "Listo para usar",
+      "redeem": "Canjear (staff)",
+      "tip": "Guarda esta página en tu pantalla de inicio para abrirla como app.",
+      "cta_wheel": "Ruleta",
+      "stamps_completed_message": "¡Objetivo completado! Tienes un nuevo premio para canjear."
+    },
+    "wheel": {
+      "title_kicker": "Ruleta",
+      "cta_wallet": "Mi wallet",
+      "cta_spin": "Girar ruleta",
+      "spinning": "Girando...",
+      "result_title": "Resultado",
+      "saved_ok": "Premio guardado en tu wallet.",
+      "saved_fail": "No se pudo guardar el premio.",
+      "cta_view_reward": "Ver en wallet",
+      "need_login": "Inicia sesión para girar"
+    },
+    "api": {
+      "missing_params": "Faltan datos",
+      "bar_not_found": "Barbería no encontrada",
+      "wheel_disabled": "Ruleta no disponible",
+      "invalid_pin": "PIN incorrecto",
+      "daily_limit_reached": "Límite diario alcanzado",
+      "reward_not_found": "Premio no encontrado",
+      "reward_not_active": "Premio no disponible",
+      "reward_wrong_user": "Este premio no te corresponde",
+      "cooldown_active": "Vuelve a intentar más tarde"
+    }
+  }
+}

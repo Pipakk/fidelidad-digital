@@ -4,10 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabaseClient";
 import { useBusinessConfig } from "@/lib/client/useBusinessConfig";
+import { Button } from "@/components/ui/Button";
+import { theme } from "@/lib/theme";
 
 type Bar = { id: string; name: string; slug: string; logo_url: string | null };
 
-export default function BarLandingPage() {
+export default function ShortLandingPage() {
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
   const supabase = useMemo(() => supabaseBrowser(), []);
@@ -23,127 +25,60 @@ export default function BarLandingPage() {
         .select("id,name,slug,logo_url")
         .eq("slug", slug)
         .single();
-
       if (!error) setBar(data as Bar);
     })();
-  }, [slug]);
+  }, [slug, supabase]);
+
+  const name = cfg?.branding?.name || bar?.name || slug;
+  const logoUrl = cfg?.branding?.logo_url || bar?.logo_url;
+  const wheelEnabled = Boolean(cfg?.features?.wheel && cfg?.wheel?.enabled);
 
   return (
     <main
       style={{
         minHeight: "100vh",
-        padding: 16,
+        padding: theme.space.xl,
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        background:
-          cfg?.branding.theme.background ||
-          "radial-gradient(1200px 600px at 20% 10%, rgba(255,186,73,.35), transparent 60%)," +
-            "radial-gradient(900px 500px at 90% 20%, rgba(52,211,153,.30), transparent 55%)," +
-            "radial-gradient(900px 500px at 30% 90%, rgba(248,113,113,.25), transparent 55%)," +
-            "linear-gradient(180deg, #0b1220 0%, #0a0f1a 100%)",
-        color: "#fff",
+        background: theme.color.ivory,
+        color: theme.color.text,
+        fontFamily: theme.font.sans,
       }}
     >
-      <div
-        style={{
-          width: "min(560px, 100%)",
-          borderRadius: 20,
-          padding: 18,
-          background: "rgba(255,255,255,0.06)",
-          border: "1px solid rgba(255,255,255,0.12)",
-          boxShadow: "0 18px 50px rgba(0,0,0,0.45)",
-          backdropFilter: "blur(10px)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ width: "min(400px, 100%)", textAlign: "center" }}>
+        {logoUrl && (
           <div
             style={{
-              width: 56,
-              height: 56,
-              borderRadius: 16,
+              width: 64,
+              height: 64,
+              margin: "0 auto",
+              borderRadius: theme.radius,
               overflow: "hidden",
-              background: "rgba(255,255,255,0.10)",
-              border: "1px solid rgba(255,255,255,0.15)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
+              border: `1px solid ${theme.color.border}`,
+              marginBottom: theme.space.md,
             }}
           >
-            {cfg?.branding.logo_url || bar?.logo_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={(cfg?.branding.logo_url || bar?.logo_url) as string}
-                alt="logo"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            ) : (
-              <span style={{ fontSize: 26 }}>🍻</span>
-            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={logoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </div>
-
-          <div style={{ textAlign: "left" }}>
-            <div style={{ fontSize: 12, opacity: 0.8, letterSpacing: 0.4 }}>
-              {cfg?.texts.landing.welcome_kicker ?? "Bienvenido a"}
-            </div>
-            <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.15 }}>{cfg?.branding.name || bar?.name || slug}</div>
-            <div style={{ marginTop: 6, fontSize: 13, opacity: 0.85 }}>
-              {cfg?.texts.landing.subtitle ?? "Consigue sellos y gira la ruleta para premios."}
-            </div>
-          </div>
-        </div>
-
-        <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
-          <button
-            onClick={() => router.push(`/b/${slug}/login`)}
-            style={{
-              width: "100%",
-              padding: 14,
-              borderRadius: 14,
-              fontSize: 16,
-              fontWeight: 800,
-              color: "#0b1220",
-              background: "linear-gradient(90deg, #fde68a, #34d399)",
-              border: "none",
-              cursor: "pointer",
-            }}
-          >
-            {cfg?.texts.landing.cta_start ?? "Entrar / Crear cuenta"}
-          </button>
-
-          <button
-            onClick={() => router.push(`/b/${slug}/wallet`)}
-            style={{
-              width: "100%",
-              padding: 12,
-              borderRadius: 14,
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.14)",
-              color: "#fff",
-              cursor: "pointer",
-              fontWeight: 700,
-            }}
-          >
-            {cfg?.texts.landing.cta_wallet ?? "Ver mis sellos"}
-          </button>
-
-          {cfg?.features.wheel && cfg?.wheel.enabled && (
-            <button
-              onClick={() => router.push(`/b/${slug}/spin`)}
-              style={{
-                width: "100%",
-                padding: 12,
-                borderRadius: 14,
-                background: "rgba(255,255,255,0.08)",
-                border: "1px solid rgba(255,255,255,0.14)",
-                color: "#fff",
-                cursor: "pointer",
-                fontWeight: 700,
-              }}
-            >
-              {cfg?.texts.landing.cta_wheel ?? "Girar la ruleta"}
-            </button>
+        )}
+        <h1 style={{ fontSize: 24, fontWeight: theme.font.weight.semibold, marginBottom: theme.space.xs }}>{name}</h1>
+        <p style={{ fontSize: 14, color: theme.color.camelDark, marginBottom: theme.space.lg }}>
+          {cfg?.texts?.landing?.subtitle ?? "Programa de fidelización"}
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: theme.space.sm }}>
+          <Button onClick={() => router.push(`/b/${slug}/login`)}>
+            {cfg?.texts?.landing?.cta_start ?? "Entrar / Crear cuenta"}
+          </Button>
+          <Button variant="secondary" onClick={() => router.push(`/b/${slug}/wallet`)}>
+            {cfg?.texts?.landing?.cta_wallet ?? "Ver mis sellos"}
+          </Button>
+          {wheelEnabled && (
+            <Button variant="secondary" onClick={() => router.push(`/b/${slug}/spin`)}>
+              {cfg?.texts?.landing?.cta_wheel ?? "Girar la ruleta"}
+            </Button>
           )}
         </div>
       </div>

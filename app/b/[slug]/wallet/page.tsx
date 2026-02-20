@@ -4,6 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabaseClient";
 import { useBusinessConfig } from "@/lib/client/useBusinessConfig";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
+import { theme } from "@/lib/theme";
 
 type Membership = {
   id: string;
@@ -16,8 +20,8 @@ type Membership = {
 type Reward = {
   id: string;
   title: string;
-  source: string; // "wheel" | "stamps" | ...
-  status: string; // "active" | "redeemed" | "expired"
+  source: string;
+  status: string;
   expires_at: string;
   created_at: string;
 };
@@ -34,14 +38,22 @@ function StampDot({ filled }: { filled: boolean }) {
   return (
     <div
       style={{
-        width: 18,
-        height: 18,
-        borderRadius: 999,
-        background: filled ? "linear-gradient(180deg, #34d399, #10b981)" : "rgba(255,255,255,0.12)",
-        border: filled ? "1px solid rgba(255,255,255,0.35)" : "1px solid rgba(255,255,255,0.18)",
-        boxShadow: filled ? "0 8px 18px rgba(16,185,129,0.20)" : "none",
+        width: 28,
+        height: 28,
+        borderRadius: "50%",
+        background: filled ? theme.color.camelDark : theme.color.sand,
+        border: `1px solid ${filled ? theme.color.textSoft : theme.color.border}`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}
-    />
+    >
+      {filled ? (
+        <span style={{ fontSize: 14 }} title="Sello">☕</span>
+      ) : (
+        <div style={{ width: 4, height: 4, borderRadius: "50%", background: theme.color.camelDark }} />
+      )}
+    </div>
   );
 }
 
@@ -51,10 +63,8 @@ export default function WalletPage() {
   const supabase = useMemo(() => supabaseBrowser(), []);
 
   const [customerId, setCustomerId] = useState<string | null>(null);
-
   const [membership, setMembership] = useState<Membership | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([]);
-
   const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -63,25 +73,18 @@ export default function WalletPage() {
   const cfg = cfgData?.config;
   const business = cfgData?.business;
 
-  // Load auth + bar + wallet info
   useEffect(() => {
     (async () => {
       setLoading(true);
-
       const { data: auth } = await supabase.auth.getUser();
       const uid = auth.user?.id || null;
       setCustomerId(uid);
-      if (!cfgData?.business || !cfg) {
+
+      if (!cfgData?.business || !cfg || !uid) {
         setLoading(false);
         return;
       }
 
-      if (!uid) {
-        setLoading(false);
-        return;
-      }
-
-      // Membership (sellos)
       const { data: m } = await supabase
         .from("memberships")
         .select("id,bar_id,customer_id,stamps_count,updated_at")
@@ -90,7 +93,7 @@ export default function WalletPage() {
         .maybeSingle();
 
       setMembership(
-        (m as any) ?? {
+        (m as Membership) ?? {
           id: "tmp",
           bar_id: cfgData.business.id,
           customer_id: uid,
@@ -99,7 +102,6 @@ export default function WalletPage() {
         }
       );
 
-      // Rewards activos
       const { data: r } = await supabase
         .from("rewards")
         .select("id,title,source,status,expires_at,created_at")
@@ -108,10 +110,10 @@ export default function WalletPage() {
         .eq("status", "active")
         .order("expires_at", { ascending: true });
 
-      setRewards((r as any) || []);
+      setRewards((r as Reward[]) || []);
       setLoading(false);
     })();
-  }, [slug, cfgData?.business?.id, cfgLoading]);
+  }, [slug, cfgData?.business?.id, cfg]);
 
   async function refresh() {
     if (!business || !customerId) return;
@@ -124,7 +126,7 @@ export default function WalletPage() {
       .maybeSingle();
 
     setMembership(
-      (m as any) ?? {
+      (m as Membership) ?? {
         id: "tmp",
         bar_id: business.id,
         customer_id: customerId,
@@ -141,7 +143,7 @@ export default function WalletPage() {
       .eq("status", "active")
       .order("expires_at", { ascending: true });
 
-    setRewards((r as any) || []);
+    setRewards((r as Reward[]) || []);
   }
 
   async function addStamp() {
@@ -150,7 +152,10 @@ export default function WalletPage() {
       router.push(`/b/${slug}/login`);
       return;
     }
-    if (!pin.trim()) return alert(cfg.texts.wallet.pin_missing_add_stamp);
+    if (!pin.trim()) {
+      alert(cfg.texts?.wallet?.pin_missing_add_stamp ?? "Introduce el PIN");
+      return;
+    }
 
     setBusy(true);
     const res = await fetch("/api/stamp/add", {
@@ -158,13 +163,18 @@ export default function WalletPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ barSlug: slug, customerId, pin }),
     });
-
     const data = await res.json();
     setBusy(false);
 
-    if (!res.ok) return alert(data.error || cfg.texts.common.error_generic);
+    if (!res.ok) {
+      alert((data.error || cfg.texts?.common?.error_generic) ?? "Error");
+      return;
+    }
     setPin("");
     await refresh();
+    if (data.createdReward) {
+      alert(cfg?.texts?.wallet?.stamps_completed_message ?? "¡Objetivo completado! Tienes un nuevo premio para canjear.");
+    }
   }
 
   async function redeemReward(rewardId: string) {
@@ -173,7 +183,10 @@ export default function WalletPage() {
       router.push(`/b/${slug}/login`);
       return;
     }
-    if (!pin.trim()) return alert(cfg.texts.wallet.pin_missing_redeem);
+    if (!pin.trim()) {
+      alert(cfg.texts?.wallet?.pin_missing_redeem ?? "Introduce el PIN");
+      return;
+    }
 
     setBusy(true);
     const res = await fetch("/api/redeem", {
@@ -181,264 +194,189 @@ export default function WalletPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ barSlug: slug, customerId, pin, rewardId }),
     });
-
     const data = await res.json();
     setBusy(false);
 
-    if (!res.ok) return alert(data.error || cfg.texts.common.error_generic);
+    if (!res.ok) {
+      alert((data.error || cfg.texts?.common?.error_generic) ?? "Error");
+      return;
+    }
     setPin("");
     await refresh();
   }
 
-  const stampsGoal = cfg?.stamps.goal ?? 8;
+  const stampsGoal = cfg?.stamps?.goal ?? 8;
   const stamps = membership?.stamps_count ?? 0;
-  const wheelEnabled = Boolean(cfg?.features.wheel && cfg?.wheel.enabled);
-  const background =
-    cfg?.branding.theme.background ||
-    "radial-gradient(1200px 600px at 20% 10%, rgba(255,186,73,.35), transparent 60%)," +
-      "radial-gradient(900px 500px at 90% 20%, rgba(52,211,153,.30), transparent 55%)," +
-      "radial-gradient(900px 500px at 30% 90%, rgba(248,113,113,.25), transparent 55%)," +
-      "linear-gradient(180deg, #0b1220 0%, #0a0f1a 100%)";
+  const wheelEnabled = Boolean(cfg?.features?.wheel && cfg?.wheel?.enabled);
+  const name = cfg?.branding?.name || business?.name || "Negocio";
+  const logoUrl = cfg?.branding?.logo_url || business?.logo_url;
+
+  if (!loading && !cfgLoading && !customerId) {
+    router.replace(`/b/${slug}/login`);
+    return null;
+  }
 
   return (
     <main
       style={{
         minHeight: "100vh",
-        padding: 16,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background,
-        color: "#fff",
+        padding: theme.space.lg,
+        background: theme.color.ivory,
+        color: theme.color.text,
+        fontFamily: theme.font.sans,
       }}
     >
-      <div
-        style={{
-          width: "min(640px, 100%)",
-          borderRadius: 20,
-          padding: 18,
-          background: "rgba(255,255,255,0.06)",
-          border: "1px solid rgba(255,255,255,0.12)",
-          boxShadow: "0 18px 50px rgba(0,0,0,0.45)",
-          backdropFilter: "blur(10px)",
-        }}
-      >
+      <div style={{ maxWidth: 520, margin: "0 auto" }}>
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: theme.space.sm,
+            marginBottom: theme.space.lg,
+          }}
+        >
           <div
             style={{
-              width: 50,
-              height: 50,
-              borderRadius: 16,
+              width: 48,
+              height: 48,
+              borderRadius: theme.radius,
               overflow: "hidden",
-              background: "rgba(255,255,255,0.10)",
-              border: "1px solid rgba(255,255,255,0.15)",
+              border: `1px solid ${theme.color.border}`,
+              background: theme.color.white,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              flexShrink: 0,
             }}
           >
-            {cfg?.branding.logo_url || business?.logo_url ? (
+            {logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={(cfg?.branding.logo_url || business?.logo_url) as string}
-                alt="logo"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
+              <img src={logoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             ) : (
-              <span style={{ fontSize: 24 }}>🍻</span>
+              <span style={{ fontSize: 20, color: theme.color.camel }}>—</span>
             )}
           </div>
-
-          <div style={{ textAlign: "left" }}>
-            <div style={{ fontSize: 12, opacity: 0.8, letterSpacing: 0.4 }}>{cfg?.texts.wallet.title_kicker ?? "Tu wallet"}</div>
-            <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.15 }}>
-              {cfg?.branding.name || business?.name || "Bar"}
-            </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 12, color: theme.color.camelDark }}>{cfg?.texts?.wallet?.title_kicker ?? "Tu wallet"}</div>
+            <div style={{ fontWeight: theme.font.weight.semibold, fontSize: 18 }}>{name}</div>
           </div>
-
-          <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", gap: theme.space.xs }}>
             {wheelEnabled && (
-              <button
+              <Button
+                style={{ width: "auto", padding: "10px 14px" }}
                 onClick={() => router.push(`/b/${slug}/spin`)}
-                style={{
-                  padding: "10px 12px",
-                  borderRadius: 12,
-                  background: "linear-gradient(90deg, #fde68a, #34d399)",
-                  border: "none",
-                  color: "#0b1220",
-                  fontWeight: 800,
-                  cursor: "pointer",
-                }}
               >
-                {cfg?.texts.wallet.cta_wheel ?? "🎡 Ruleta"}
-              </button>
+                {cfg?.texts?.wallet?.cta_wheel ?? "Ruleta"}
+              </Button>
             )}
-            <button
-              onClick={() => router.push(`/b/${slug}`)}
-              style={{
-                padding: "10px 12px",
-                borderRadius: 12,
-                background: "rgba(255,255,255,0.08)",
-                border: "1px solid rgba(255,255,255,0.14)",
-                color: "#fff",
-                cursor: "pointer",
-                fontWeight: 700,
-              }}
-            >
+            <Button variant="secondary" style={{ width: "auto", padding: "10px 14px" }} onClick={() => router.push(`/b/${slug}`)}>
               Volver
-            </button>
+            </Button>
           </div>
         </div>
 
-        {/* Sellos */}
-        <div
-          style={{
-            borderRadius: 16,
-            padding: 14,
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.10)",
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <div style={{ fontSize: 16, fontWeight: 800 }}>{cfg?.texts.wallet.section_stamps ?? "Tus sellos"}</div>
-            <div style={{ fontSize: 13, opacity: 0.85 }}>
-              {stamps}/{stampsGoal}
-            </div>
+        {/* Tarjeta de puntos */}
+        <Card style={{ marginBottom: theme.space.lg }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: theme.space.sm }}>
+            <span style={{ fontSize: 15, fontWeight: theme.font.weight.medium }}>
+              {cfg?.texts?.wallet?.section_stamps ?? "Tus sellos"}
+            </span>
+            <span style={{ fontSize: 14, color: theme.color.camelDark }}>{stamps} / {stampsGoal}</span>
           </div>
-
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
-            {Array.from({ length: stampsGoal }).map((_, idx) => (
-              <StampDot key={idx} filled={idx < stamps} />
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {Array.from({ length: stampsGoal }).map((_, i) => (
+              <StampDot key={i} filled={i < stamps} />
             ))}
           </div>
+          <p style={{ marginTop: theme.space.sm, fontSize: 13, color: theme.color.camelDark }}>
+            {cfg?.texts?.wallet?.reward_for_completion ?? "Al completar:"}{" "}
+            <strong>{cfg?.stamps?.reward_title ?? "Premio"}</strong>
+          </p>
+        </Card>
 
-          <div style={{ marginTop: 10, fontSize: 13, opacity: 0.9 }}>
-            {cfg?.texts.wallet.reward_for_completion ?? "Premio por completar:"}{" "}
-            <strong>{cfg?.stamps.reward_title || "Premio"}</strong>
+        {/* Acciones staff */}
+        <Card style={{ marginBottom: theme.space.lg }}>
+          <div style={{ fontSize: 15, fontWeight: theme.font.weight.medium, marginBottom: 4 }}>
+            {cfg?.texts?.wallet?.staff_actions_title ?? "Acciones (staff)"}
           </div>
-        </div>
+          <p style={{ fontSize: 13, color: theme.color.camelDark, marginBottom: theme.space.sm }}>
+            {cfg?.texts?.wallet?.staff_actions_subtitle ??
+              "PIN del establecimiento para validar consumo o canjear premios."}
+          </p>
+          <Input
+            value={pin}
+            onChange={(e) => setPin(e.target.value)}
+            placeholder={cfg?.texts?.wallet?.pin_placeholder ?? "PIN"}
+          />
+          <Button onClick={addStamp} disabled={busy} style={{ marginTop: theme.space.xs }}>
+            {busy ? cfg?.texts?.wallet?.processing ?? "Procesando…" : cfg?.texts?.wallet?.add_stamp ?? "Añadir 1 sello"}
+          </Button>
+        </Card>
 
-        {/* Staff PIN + acciones */}
-        <div style={{ display: "grid", gap: 12, marginTop: 14 }}>
-          <div
-            style={{
-              borderRadius: 16,
-              padding: 14,
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.10)",
-            }}
-          >
-            <div style={{ fontSize: 16, fontWeight: 800 }}>{cfg?.texts.wallet.staff_actions_title ?? "Acciones (staff)"}</div>
-            <div style={{ fontSize: 13, opacity: 0.85, marginTop: 4 }}>
-              {cfg?.texts.wallet.staff_actions_subtitle ??
-                "El camarero introduce el PIN del bar para validar consumo o canjear premios."}
-            </div>
-
-            <input
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              placeholder={cfg?.texts.wallet.pin_placeholder ?? "PIN (ej. 1234)"}
-              style={{
-                width: "100%",
-                marginTop: 12,
-                padding: 12,
-                borderRadius: 14,
-                border: "1px solid rgba(255,255,255,0.16)",
-                background: "rgba(0,0,0,0.25)",
-                color: "#fff",
-                outline: "none",
-              }}
-            />
-
-            <button
-              onClick={addStamp}
-              disabled={busy}
-              style={{
-                width: "100%",
-                marginTop: 10,
-                padding: 12,
-                borderRadius: 14,
-                fontWeight: 900,
-                border: "none",
-                cursor: busy ? "not-allowed" : "pointer",
-                color: "#0b1220",
-                background: busy
-                  ? "linear-gradient(90deg, rgba(255,255,255,0.45), rgba(255,255,255,0.35))"
-                  : "linear-gradient(90deg, #fde68a, #34d399)",
-              }}
-            >
-              {busy ? cfg?.texts.wallet.processing ?? "Procesando..." : cfg?.texts.wallet.add_stamp ?? "Añadir 1 sello"}
-            </button>
+        {/* Premios activos */}
+        <Card>
+          <div style={{ fontSize: 15, fontWeight: theme.font.weight.medium, marginBottom: theme.space.sm }}>
+            {cfg?.texts?.wallet?.rewards_title ?? "Premios activos"}
           </div>
 
-          {/* Premios activos */}
-          <div
-            style={{
-              borderRadius: 16,
-              padding: 14,
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.10)",
-            }}
-          >
-            <div style={{ fontSize: 16, fontWeight: 800 }}>{cfg?.texts.wallet.rewards_title ?? "Premios activos"}</div>
-
-            {loading ? (
-              <div style={{ marginTop: 10, opacity: 0.85 }}>{cfg?.texts.common.loading ?? "Cargando..."}</div>
-            ) : rewards.length === 0 ? (
-              <div style={{ marginTop: 10, opacity: 0.85 }}>{cfg?.texts.wallet.rewards_empty ?? "Aún no tienes premios activos."}</div>
-            ) : (
-              <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
-                {rewards.map((r) => (
+          {loading ? (
+            <p style={{ fontSize: 14, color: theme.color.camelDark }}>{cfg?.texts?.common?.loading ?? "Cargando…"}</p>
+          ) : rewards.length === 0 ? (
+            <p style={{ fontSize: 14, color: theme.color.camelDark }}>{cfg?.texts?.wallet?.rewards_empty ?? "Sin premios activos."}</p>
+          ) : (
+            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: theme.space.sm }}>
+              {rewards.map((r) => (
+                <li
+                  key={r.id}
+                  style={{
+                    padding: theme.space.md,
+                    borderRadius: theme.radius,
+                    border: `1px solid ${theme.color.border}`,
+                    background: theme.color.ivory,
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: theme.space.sm,
+                  }}
+                >
                   <div
-                    key={r.id}
                     style={{
-                      borderRadius: 14,
-                      padding: 12,
-                      background: "rgba(0,0,0,0.22)",
-                      border: "1px solid rgba(255,255,255,0.12)",
-                      display: "grid",
-                      gap: 8,
+                      width: 48,
+                      height: 48,
+                      borderRadius: 10,
+                      background: theme.color.sand,
+                      border: `1px solid ${theme.color.border}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 24,
+                      flexShrink: 0,
                     }}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                      <div style={{ fontWeight: 900 }}>{r.title}</div>
-                      <div style={{ fontSize: 12, opacity: 0.8 }}>
-                        {r.source === "wheel" ? "🎡" : "🏷️"} {r.source}
-                      </div>
-                    </div>
-
-                    <div style={{ fontSize: 12, opacity: 0.85 }}>
-                      {(cfg?.texts.wallet.rewards_expires_at ?? "Caduca:")} {formatDate(r.expires_at)}
-                    </div>
-
-                    <button
-                      onClick={() => redeemReward(r.id)}
-                      disabled={busy}
-                      style={{
-                        width: "100%",
-                        padding: 10,
-                        borderRadius: 12,
-                        border: "1px solid rgba(255,255,255,0.14)",
-                        background: "rgba(255,255,255,0.08)",
-                        color: "#fff",
-                        cursor: busy ? "not-allowed" : "pointer",
-                        fontWeight: 800,
-                      }}
-                    >
-                      {cfg?.texts.wallet.redeem ?? "Canjear (staff)"}
-                    </button>
+                    🍺
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: theme.font.weight.semibold, fontSize: 15, color: theme.color.text }}>
+                      1× {r.title}
+                    </div>
+                    <div style={{ fontSize: 13, color: theme.color.ready, marginTop: 2 }}>
+                      ✔ {cfg?.texts?.wallet?.rewards_ready ?? "Listo para usar"}
+                    </div>
+                    <div style={{ fontSize: 12, color: theme.color.camelDark, marginTop: 4 }}>
+                      {cfg?.texts?.wallet?.rewards_expires_at ?? "Caduca:"} {formatDate(r.expires_at)}
+                    </div>
+                    <Button variant="secondary" onClick={() => redeemReward(r.id)} disabled={busy} style={{ marginTop: theme.space.sm }}>
+                      {cfg?.texts?.wallet?.redeem ?? "Canjear (staff)"}
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
 
-        <div style={{ marginTop: 14, fontSize: 12, opacity: 0.75, textAlign: "center" }}>
-          {cfg?.texts.wallet.tip ?? "Consejo: guarda esta página en tu pantalla de inicio para abrirla como app."}
-        </div>
+        <p style={{ marginTop: theme.space.lg, fontSize: 12, color: theme.color.camelDark, textAlign: "center" }}>
+          {cfg?.texts?.wallet?.tip ?? "Guarda esta página en tu pantalla de inicio para acceder como app."}
+        </p>
       </div>
     </main>
   );

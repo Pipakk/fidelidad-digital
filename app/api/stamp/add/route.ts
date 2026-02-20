@@ -36,26 +36,9 @@ export async function POST(req: Request) {
     if (staffErr) return NextResponse.json({ error: staffErr.message }, { status: 500 });
     if (!staff) return NextResponse.json({ error: cfg.texts.api.invalid_pin }, { status: 401 });
 
-    // 3) límite diario (si stamp_daily_limit viene null -> no limita)
-    const limit = Number(cfg.stamps.daily_limit ?? 0);
-    if (limit > 0) {
-      const since = new Date();
-      since.setHours(0, 0, 0, 0);
+    // Sin límite de sellos por PIN: no se aplica límite diario.
 
-      const { count, error: countErr } = await sb
-        .from("stamp_events")
-        .select("*", { count: "exact", head: true })
-        .eq("bar_id", bar.id)
-        .eq("customer_id", customerId)
-        .gte("created_at", since.toISOString());
-
-      if (countErr) return NextResponse.json({ error: countErr.message }, { status: 500 });
-      if ((count ?? 0) >= limit) {
-        return NextResponse.json({ error: cfg.texts.api.daily_limit_reached }, { status: 429 });
-      }
-    }
-
-    // 4) membership (upsert) + sumar sello en una sola operación fiable
+    // 3) membership (upsert) + sumar sello
     // Primero, aseguramos que existe
     const { data: m0, error: m0Err } = await sb
       .from("memberships")
@@ -98,7 +81,7 @@ export async function POST(req: Request) {
 
     let createdReward: any = null;
 
-    // 5) si completa objetivo, crear reward y reset sellos
+    // 4) si completa objetivo, crear reward y reset sellos
     const goal = Number(cfg.stamps.goal ?? 0);
     if (goal > 0 && updated.stamps_count >= goal) {
       const expiresDays = Number(cfg.rewards.expires_days ?? 30);
@@ -133,7 +116,8 @@ export async function POST(req: Request) {
       if (resetErr) return NextResponse.json({ error: resetErr.message }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true, stamps: updated.stamps_count, createdReward });
+    const finalStamps = createdReward ? 0 : updated.stamps_count;
+    return NextResponse.json({ ok: true, stamps: finalStamps, createdReward });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "Server error" }, { status: 500 });
   }

@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fidelización digital — One-pager producto</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --camel: #C19A6B;
+      --camel-dark: #A67B5B;
+      --camel-light: #D2B48C;
+      --sand: #E8D8C3;
+      --ivory: #F5EFE6;
+      --text: #3E2F26;
+      --text-soft: #2B211C;
+      --white: #fff;
+      --shadow: rgba(62,47,38,0.06);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 10pt;
+      line-height: 1.45;
+      color: var(--text);
+      background: var(--ivory);
+      padding: 20px;
+      max-width: 720px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text-soft);
+      margin: 0 0 6px 0;
+      border-bottom: 2px solid var(--camel);
+      padding-bottom: 8px;
+    }
+    h2 {
+      font-size: 11pt;
+      font-weight: 600;
+      color: var(--camel-dark);
+      margin: 18px 0 8px 0;
+    }
+    h3 { font-size: 10pt; margin: 0 0 4px 0; color: var(--text); }
+    p { margin: 0 0 8px 0; }
+    ul { margin: 0 0 8px 0; padding-left: 1.2em; }
+    li { margin-bottom: 2px; }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .hero-logo {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 8px;
+      border-radius: 10px;
+      border: 1px solid var(--sand);
+      background: var(--white);
+      object-fit: contain;
+      display: block;
+    }
+    .hero-tagline {
+      font-size: 11pt;
+      color: var(--camel-dark);
+      margin: 0 0 10px 0;
+      font-weight: 500;
+    }
+    .hero-bullets {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px 16px;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: 9pt;
+      color: var(--text);
+    }
+    .hero-bullets li::before { content: "• "; color: var(--camel); }
+
+    .card {
+      background: var(--white);
+      border: 1px solid var(--sand);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 8px var(--shadow);
+    }
+    .card h3 { margin-bottom: 6px; }
+
+    .img-block {
+      border: 1px solid var(--sand);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 10px 0;
+      box-shadow: 0 1px 8px var(--shadow);
+      background: var(--white);
+    }
+    .img-block img {
+      display: block;
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+    }
+    .img-block figcaption {
+      padding: 6px 10px;
+      font-size: 8pt;
+      color: var(--camel-dark);
+      background: var(--ivory);
+    }
+
+    .flow-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin: 10px 0;
+    }
+    .flow-step {
+      text-align: center;
+      padding: 10px 6px;
+      background: var(--white);
+      border: 1px solid var(--sand);
+      border-radius: 8px;
+      font-size: 9pt;
+    }
+    .flow-step .icon {
+      width: 28px;
+      height: 28px;
+      margin: 0 auto 4px;
+      border-radius: 50%;
+      background: var(--sand);
+      border: 1px solid var(--camel-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: var(--camel-dark);
+    }
+    .flow-step strong { display: block; font-size: 8pt; color: var(--camel-dark); }
+
+    .use-cases {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .use-case {
+      background: var(--white);
+      border: 1px solid var(--sand);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 9pt;
+      box-shadow: 0 1px 6px var(--shadow);
+    }
+    .use-case ul { padding-left: 1em; margin: 4px 0; }
+    .use-case .goal { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--sand); font-size: 8pt; color: var(--camel-dark); }
+
+    .roi-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9pt;
+      margin: 8px 0;
+    }
+    .roi-table th, .roi-table td {
+      border: 1px solid var(--sand);
+      padding: 6px 8px;
+      text-align: left;
+    }
+    .roi-table th { background: var(--ivory); color: var(--text-soft); font-weight: 600; }
+    .roi-note { font-size: 8pt; color: var(--camel-dark); margin-top: 4px; }
+
+    .param-list { font-size: 9pt; margin: 4px 0; }
+    .param-list li { margin-bottom: 2px; }
+
+    .cta-soft {
+      text-align: center;
+      padding: 14px;
+      background: var(--white);
+      border: 1px solid var(--sand);
+      border-radius: 10px;
+      margin: 14px 0;
+      box-shadow: 0 1px 8px var(--shadow);
+    }
+    .cta-soft p { margin-bottom: 8px; }
+    .cta-soft a {
+      display: inline-block;
+      padding: 10px 20px;
+      background: var(--camel);
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 10pt;
+      border-radius: 8px;
+      border: 1px solid var(--camel-dark);
+    }
+    .cta-soft a:hover { background: var(--camel-dark); color: var(--white); }
+    .cta-soft a.sec { background: transparent; color: var(--camel-dark); border-color: var(--camel); }
+    .cta-soft a.sec:hover { background: var(--sand); }
+
+    .footer {
+      margin-top: 20px;
+      padding-top: 10px;
+      border-top: 1px solid var(--sand);
+      font-size: 8pt;
+      color: var(--camel-dark);
+      text-align: center;
+    }
+
+    .img-block img[src^="data:"] { min-height: 140px; }
+    .img-placeholder {
+      display: block;
+      width: 100%;
+      min-height: 160px;
+      background: var(--ivory);
+      border: 1px dashed var(--sand);
+      box-sizing: border-box;
+    }
+
+    @media print {
+      body { padding: 12px; background: var(--white); }
+      .card, .img-block, .use-case, .flow-step { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="hero">
+    <h1>Fidelización digital</h1>
+    <p class="hero-tagline">Fidelización sin app: QR → Wallet → Premios</p>
+    <ul class="hero-bullets">
+      <li>Sin app: todo en el navegador</li>
+      <li>Configurable por negocio (nombre, premios, ruleta)</li>
+      <li>Fácil para el staff: validación con PIN</li>
+    </ul>
+  </header>
+
+  <section class="card">
+    <h2>Qué es</h2>
+    <p>Programa de puntos o sellos digitales: el cliente acumula en cada visita y puede canjear premios. Opcionalmente incluye una ruleta promocional. Todo accesible por QR, sin descargar ninguna aplicación.</p>
+  </section>
+
+  <section>
+    <h2>Cómo funciona</h2>
+    <div class="flow-steps">
+      <div class="flow-step">
+        <div class="icon">1</div>
+        <strong>QR</strong>
+        En mesa o mostrador
+      </div>
+      <div class="flow-step">
+        <div class="icon">2</div>
+        <strong>Registro</strong>
+        Rápido (email)
+      </div>
+      <div class="flow-step">
+        <div class="icon">3</div>
+        <strong>Sellos</strong>
+        Acumula por visita
+      </div>
+      <div class="flow-step">
+        <div class="icon">4</div>
+        <strong>Premios</strong>
+        Canjeos y ruleta
+      </div>
+    </div>
+    <figure class="img-block">
+      <img src="./assets/landing-mockup.png" alt="Landing del negocio" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22360%22 height=%22160%22 viewBox=%220 0 360 160%22%3E%3Crect width=%22360%22 height=%22160%22 fill=%22%23F5EFE6%22 stroke=%22%23E8D8C3%22/%3E%3Ctext x=%22180%22 y=%2282%22 text-anchor=%22middle%22 fill=%22%23A67B5B%22 font-size=%2212%22%3Elanding%3C/text%3E%3C/svg%3E'" />
+      <figcaption>Landing del negocio</figcaption>
+    </figure>
+    <figure class="img-block">
+      <img src="./assets/wallet-mockup.png" alt="Wallet de sellos y premios" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22360%22 height=%22160%22 viewBox=%220 0 360 160%22%3E%3Crect width=%22360%22 height=%22160%22 fill=%22%23F5EFE6%22 stroke=%22%23E8D8C3%22/%3E%3Ctext x=%22180%22 y=%2282%22 text-anchor=%22middle%22 fill=%22%23A67B5B%22 font-size=%2212%22%3Ewallet%3C/text%3E%3C/svg%3E'" />
+      <figcaption>Wallet y premios</figcaption>
+    </figure>
+    <figure class="img-block">
+      <img src="./assets/ruleta-mockup.png" alt="Ruleta de premios" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22360%22 height=%22160%22 viewBox=%220 0 360 160%22%3E%3Crect width=%22360%22 height=%22160%22 fill=%22%23F5EFE6%22 stroke=%22%23E8D8C3%22/%3E%3Ctext x=%22180%22 y=%2282%22 text-anchor=%22middle%22 fill=%22%23A67B5B%22 font-size=%2212%22%3Eruleta%3C/text%3E%3C/svg%3E'" />
+      <figcaption>Ruleta de premios</figcaption>
+    </figure>
+  </section>
+
+  <section class="card">
+    <h2>Experiencia del staff</h2>
+    <p>El personal valida consumiciones y canjeos con un único PIN del establecimiento. Sin pantallas complejas ni formación larga: sumar sello o canjear premio en un par de toques.</p>
+  </section>
+ <section></section>
+  <section>
+    <h2>Casos de uso</h2>
+    <div class="use-cases">
+      <div class="use-case">
+        <h3>Bar / Restaurante</h3>
+        <ul>
+          <li>X consumiciones = 1 caña o tapa gratis</li>
+          <li>Ruleta: descuento, sello extra, premio</li>
+        </ul>
+        <p class="goal">Objetivo: recurrencia y llenar horas valle</p>
+      </div>
+      <div class="use-case">
+        <h3>Cafetería</h3>
+        <ul>
+          <li>X cafés = 1 gratis o bollería</li>
+          <li>Ruleta: descuento, sello extra, premio</li>
+        </ul>
+        <p class="goal">Objetivo: frecuencia y ticket medio</p>
+      </div>
+      <div class="use-case">
+        <h3>Peluquería / Estética</h3>
+        <ul>
+          <li>X cortes = corte o tratamiento gratis</li>
+          <li>Ruleta: descuento, sello extra, premio</li>
+        </ul>
+        <p class="goal">Objetivo: fidelizar y cross-sell</p>
+      </div>
+      <div class="use-case">
+        <h3>Gimnasio / Clínica / Retail</h3>
+        <ul>
+          <li>Visitas o compras = beneficio (clase, revisión, descuento)</li>
+          <li>Ruleta en campañas puntuales</li>
+        </ul>
+        <p class="goal">Objetivo: retención y recurrencia</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>ROI / Impacto esperado</h2>
+    <p>El retorno viene de más visitas repetidas, posible subida de ticket medio y base de datos para comunicar ofertas. Un ejemplo numérico orientativo:</p>
+    <table class="roi-table">
+      <tr><th>Supuesto</th><th>Valor</th></tr>
+      <tr><td>Clientes únicos/mes</td><td>500</td></tr>
+      <tr><td>Repetición actual (aprox.)</td><td>20%</td></tr>
+      <tr><td>Ticket medio</td><td>12 €</td></tr>
+      <tr><td>Margen (aprox.)</td><td>65%</td></tr>
+      <tr><td>Mejora repetición (conservadora)</td><td>+5 pts (25% vs 20%)</td></tr>
+      <tr><td><strong>Ingresos extra estimados/mes</strong></td><td><strong>~300 €</strong></td></tr>
+    </table>
+    <p class="roi-note">Nota: valores orientativos. El impacto real depende del negocio, implantación y uso del programa.</p>
+  </section>
+
+  <section class="card">
+    <h2>Qué se puede parametrizar</h2>
+    <ul class="param-list">
+      <li>Textos y nombres por negocio</li>
+      <li>Nombre de sellos o puntos y objetivos</li>
+      <li>Premios por completar y caducidad</li>
+      <li>Ruleta: segmentos, premios y pesos</li>
+      <li>Imagen y branding: logo, colores</li>
+    </ul>
+  </section>
+
+  <section class="cta-soft">
+    <p>¿Quieres verlo con tu marca y tus premios?</p>
+    <p><strong>Pídeme una demo de 10 minutos.</strong></p>
+    <a href="https://wa.me/34639577915?text=Hola,%20quiero%20ver%20la%20demo%20de%20fidelización" target="_blank" rel="noopener">Solicitar demo por WhatsApp</a>
+  </section>
+
+  <footer class="footer">
+    <p>Los datos de ROI y casos de uso son orientativos. Contrato y condiciones según oferta comercial.</p>
+  </footer>
+
+</body>
+</html>

@@ -20,28 +20,7 @@ export async function POST(req: Request) {
     if (!bar) return NextResponse.json({ error: cfg.texts.api.bar_not_found }, { status: 404 });
     if (cfg.wheel.enabled === false) return NextResponse.json({ error: cfg.texts.api.wheel_disabled }, { status: 403 });
 
-    // cooldown
-    const cooldownDays = Number(cfg.wheel.cooldown_days ?? 0);
-    if (cooldownDays > 0) {
-      const { data: lastSpin } = await sb
-        .from("wheel_spins")
-        .select("created_at")
-        .eq("bar_id", bar.id)
-        .eq("customer_id", customerId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (lastSpin?.created_at) {
-        const last = new Date(lastSpin.created_at);
-        const now = new Date();
-        const ms = now.getTime() - last.getTime();
-        const days = ms / (1000 * 60 * 60 * 24);
-        if (days < cooldownDays) {
-          return NextResponse.json({ error: cfg.texts.api.cooldown_active }, { status: 429 });
-        }
-      }
-    }
+    // Sin límite de tiradas: no se aplica cooldown.
 
     const segments = (cfg.wheel.segments || []).filter((s) => s && s.enabled !== false);
     const chosen = pickWeighted(segments);

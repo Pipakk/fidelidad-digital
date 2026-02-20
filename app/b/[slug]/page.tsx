@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabaseClient";
 import { useBusinessConfig } from "@/lib/client/useBusinessConfig";
+import { Button } from "@/components/ui/Button";
+import { theme } from "@/lib/theme";
 
 export default function BarLanding() {
   const { slug } = useParams<{ slug: string }>();
@@ -21,214 +23,157 @@ export default function BarLanding() {
     (async () => {
       const { data: auth } = await supabase.auth.getUser();
       setUserId(auth.user?.id ?? null);
-
       setLoading(false);
     })();
-  }, [slug]);
+  }, [supabase]);
 
   if (loading || cfgLoading || !cfg) {
     return (
-      <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", color: "#fff", background: "#0b1220" }}>
-        {cfg?.texts.common.loading ?? "Cargando..."}
-      </main>
-    );
-  }
-  if (!business) {
-    return (
-      <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", color: "#fff", background: "#0b1220" }}>
-        {cfg.texts.landing.error_not_found}
+      <main
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: theme.color.ivory,
+          color: theme.color.text,
+          fontFamily: theme.font.sans,
+        }}
+      >
+        <span style={{ fontSize: 15, color: theme.color.camelDark }}>{cfg?.texts?.common?.loading ?? "Cargando…"}</span>
       </main>
     );
   }
 
-  const wheelEnabled = cfg.features.wheel && cfg.wheel.enabled;
-  const stampsGoal = cfg.stamps.goal;
-  const stampsRewardTitle = cfg.stamps.reward_title || "Premio";
+  if (!business) {
+    return (
+      <main
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: theme.color.ivory,
+          color: theme.color.text,
+          fontFamily: theme.font.sans,
+        }}
+      >
+        <span style={{ fontSize: 15, color: theme.color.camelDark }}>{cfg.texts?.landing?.error_not_found ?? "Negocio no encontrado."}</span>
+      </main>
+    );
+  }
+
+  const name = cfg.branding?.name || business.name;
+  const logoUrl = cfg.branding?.logo_url || business.logo_url;
+  const wheelEnabled = Boolean(cfg.features?.wheel && cfg.wheel?.enabled);
 
   return (
     <main
       style={{
         minHeight: "100vh",
-        padding: 16,
+        padding: theme.space.xl,
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        background:
-          cfg.branding.theme.background ||
-          "radial-gradient(1200px 600px at 20% 10%, rgba(255,186,73,.35), transparent 60%)," +
-            "radial-gradient(900px 500px at 90% 20%, rgba(52,211,153,.30), transparent 55%)," +
-            "radial-gradient(900px 500px at 30% 90%, rgba(248,113,113,.25), transparent 55%)," +
-            "linear-gradient(180deg, #0b1220 0%, #0a0f1a 100%)",
-        color: "#fff",
+        background: theme.color.ivory,
+        color: theme.color.text,
+        fontFamily: theme.font.sans,
       }}
     >
-      <div
-        style={{
-          width: "min(560px, 100%)",
-          borderRadius: 20,
-          padding: 18,
-          background: "rgba(255,255,255,0.06)",
-          border: "1px solid rgba(255,255,255,0.12)",
-          boxShadow: "0 18px 50px rgba(0,0,0,0.45)",
-          backdropFilter: "blur(10px)",
-        }}
-      >
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-          <div
-            style={{
-              width: 58,
-              height: 58,
-              borderRadius: 18,
-              overflow: "hidden",
-              background: "rgba(255,255,255,0.10)",
-              border: "1px solid rgba(255,255,255,0.15)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            {cfg.branding.logo_url || business.logo_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={(cfg.branding.logo_url || business.logo_url) as string}
-                alt="logo"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            ) : (
-              <span style={{ fontSize: 28 }}>🍻</span>
-            )}
-          </div>
-
-          <div style={{ textAlign: "left" }}>
-            <div style={{ fontSize: 12, opacity: 0.8, letterSpacing: 0.4 }}>{cfg.texts.landing.welcome_kicker}</div>
-            <div style={{ fontSize: 24, fontWeight: 900, lineHeight: 1.15 }}>{cfg.branding.name || business.name}</div>
-            <div style={{ marginTop: 6, fontSize: 13, opacity: 0.85 }}>
-              {cfg.texts.landing.subtitle}
-            </div>
-          </div>
-        </div>
-
-        {/* Info rápida */}
+      <div style={{ width: "min(420px, 100%)", textAlign: "center" }}>
+        {/* Logo centrado — estilo line-art como en mockup */}
         <div
           style={{
-            borderRadius: 16,
-            padding: 14,
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.10)",
-            display: "grid",
-            gap: 10,
+            width: 88,
+            height: 88,
+            margin: "0 auto",
+            borderRadius: theme.radius,
+            overflow: "hidden",
+            border: `1px solid ${theme.color.border}`,
+            background: theme.color.white,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: theme.space.lg,
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-            <span style={{ opacity: 0.85 }}>Objetivo de sellos</span>
-            <strong>{stampsGoal}</strong>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-            <span style={{ opacity: 0.85 }}>Premio por completar</span>
-            <strong>{stampsRewardTitle}</strong>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-            <span style={{ opacity: 0.85 }}>Ruleta</span>
-            <strong>{wheelEnabled ? "Activada" : "No disponible"}</strong>
-          </div>
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : (
+            <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: theme.color.camelDark }}>
+              <path d="M10 40V20h6v2h2v-2h6v20h-2V24h-2v16h-2V24h-2v16H10z" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinejoin="round" />
+              <path d="M14 26h2v2h-2zM20 26h2v2h-2z" stroke="currentColor" strokeWidth="1" fill="none" />
+              <path d="M32 18c0-2.2 1.8-4 4-4s4 1.8 4 4v3H32v-3z" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M34 24v6h4v-6M36 26v2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+            </svg>
+          )}
         </div>
 
-        {/* CTA */}
-        {!userId ? (
-          <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
-            <button
-              onClick={() => router.push(`/b/${slug}/login`)}
-              style={{
-                width: "100%",
-                padding: 14,
-                borderRadius: 14,
-                fontSize: 16,
-                fontWeight: 900,
-                color: "#0b1220",
-                background: "linear-gradient(90deg,#fde68a,#34d399)",
-                border: "none",
-                cursor: "pointer",
-                boxShadow: "0 14px 30px rgba(0,0,0,0.35)",
-                touchAction: "manipulation",
-              }}
-            >
-              {cfg.texts.landing.cta_start}
-            </button>
+        <h1
+          style={{
+            fontSize: 28,
+            fontWeight: theme.font.weight.semibold,
+            color: theme.color.text,
+            marginBottom: theme.space.xs,
+            lineHeight: 1.2,
+          }}
+        >
+          {name}
+        </h1>
+        <p style={{ fontSize: 15, color: theme.color.camelDark, marginBottom: theme.space.xl }}>
+          {cfg.texts?.landing?.subtitle ?? "Programa de fidelización"}
+        </p>
 
-            <div style={{ fontSize: 12, opacity: 0.78, lineHeight: 1.35, textAlign: "center" }}>
-              {cfg.texts.login.subtitle}
-            </div>
-          </div>
-        ) : (
-          <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
-            <button
-              onClick={() => router.push(`/b/${slug}/wallet`)}
-              style={{
-                width: "100%",
-                padding: 14,
-                borderRadius: 14,
-                fontSize: 16,
-                fontWeight: 900,
-                color: "#0b1220",
-                background: "linear-gradient(90deg,#fde68a,#34d399)",
-                border: "none",
-                cursor: "pointer",
-                boxShadow: "0 14px 30px rgba(0,0,0,0.35)",
-                touchAction: "manipulation",
-              }}
-            >
-              {cfg.texts.landing.cta_wallet}
-            </button>
-
-            {wheelEnabled && (
+        <div style={{ display: "flex", flexDirection: "row", flexWrap: "wrap", gap: theme.space.sm, justifyContent: "center" }}>
+          {!userId ? (
+            <>
+              <Button variant="primaryDark" onClick={() => router.push(`/b/${slug}/login`)} style={{ flex: "1 1 140px", minWidth: 140 }}>
+                {cfg.texts?.landing?.cta_start ?? "Acceder"}
+              </Button>
+              <Button variant="secondary" onClick={() => router.push(`/b/${slug}/wallet`)} style={{ flex: "1 1 140px", minWidth: 140 }}>
+                {cfg.texts?.landing?.cta_premium ?? "Ver premios"}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="primaryDark" onClick={() => router.push(`/b/${slug}/wallet`)} style={{ flex: "1 1 140px", minWidth: 140 }}>
+                {cfg.texts?.landing?.cta_wallet ?? "Mi wallet"}
+              </Button>
+              {wheelEnabled && (
+                <Button variant="secondary" onClick={() => router.push(`/b/${slug}/spin`)} style={{ flex: "1 1 140px", minWidth: 140 }}>
+                  {cfg.texts?.landing?.cta_wheel ?? "Ruleta"}
+                </Button>
+              )}
               <button
-                onClick={() => router.push(`/b/${slug}/spin`)}
+                type="button"
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  setUserId(null);
+                }}
                 style={{
                   width: "100%",
-                  padding: 12,
-                  borderRadius: 14,
-                  background: "rgba(255,255,255,0.08)",
-                  border: "1px solid rgba(255,255,255,0.14)",
-                  color: "#fff",
+                  padding: theme.space.sm,
+                  background: "transparent",
+                  border: "none",
+                  color: theme.color.camelDark,
+                  fontSize: 13,
                   cursor: "pointer",
-                  fontWeight: 800,
-                  touchAction: "manipulation",
+                  textDecoration: "underline",
                 }}
               >
-                {cfg.texts.landing.cta_wheel}
+                {cfg.texts?.landing?.logout ?? "Cerrar sesión"}
               </button>
-            )}
-
-            <button
-              onClick={async () => {
-                await supabase.auth.signOut();
-                setUserId(null);
-              }}
-              style={{
-                width: "100%",
-                padding: 12,
-                borderRadius: 14,
-                background: "rgba(255,255,255,0.08)",
-                border: "1px solid rgba(255,255,255,0.14)",
-                color: "#fff",
-                cursor: "pointer",
-                fontWeight: 800,
-                opacity: 0.9,
-              }}
-            >
-              {cfg.texts.landing.logout}
-            </button>
-          </div>
-        )}
-
-        {/* Footer */}
-        <div style={{ marginTop: 14, fontSize: 12, opacity: 0.75, textAlign: "center", lineHeight: 1.35 }}>
-          {cfg.texts.landing.privacy_line_1}
-          <br />
-          {cfg.texts.landing.privacy_line_2}
+            </>
+          )}
         </div>
+
+        <p style={{ marginTop: theme.space.xl, fontSize: 11, color: theme.color.camelDark, lineHeight: 1.4 }}>
+          {cfg.texts?.landing?.privacy_line_1}
+          <br />
+          {cfg.texts?.landing?.privacy_line_2}
+        </p>
       </div>
     </main>
   );

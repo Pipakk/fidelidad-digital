@@ -1,0 +1,25 @@
+/* Gama camel — minimal, editorial */
+:root {
+  --color-camel-light: #D2B48C;
+  --color-camel: #C19A6B;
+  --color-camel-dark: #A67B5B;
+  --color-sand: #E8D8C3;
+  --color-ivory: #F5EFE6;
+  --color-text: #3E2F26;
+  --color-text-soft: #2B211C;
+  --color-border: rgba(163, 123, 91, 0.25);
+  --color-border-focus: #A67B5B;
+  --color-shadow: rgba(62, 47, 38, 0.06);
+  --radius: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", "Poppins", system-ui, -apple-system, sans-serif;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+}

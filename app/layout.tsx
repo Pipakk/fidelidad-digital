@@ -1,6 +1,8 @@
+import "./globals.css";
+
 export const metadata = {
   title: "Loyalty MVP",
-  description: "Sellos + Ruleta para bares",
+  description: "Fidelización para negocios",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -10,16 +12,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
           rel="stylesheet"
         />
       </head>
-      <body
-        style={{
-          fontFamily: "Poppins, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
-          margin: 0,
-        }}
-      >
+      <body style={{ fontFamily: "Inter, Poppins, system-ui, sans-serif", margin: 0 }}>
         {children}
       </body>
     </html>

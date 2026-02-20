@@ -8,6 +8,82 @@ MVP web para bares/restaurantes basado en QR (sin app) con:
 
 ---
 
+## 0) Cómo ejecutar el proyecto
+
+### Opción A: Supabase en la nube (recomendado para empezar)
+
+1. **Crear un proyecto en [Supabase](https://supabase.com)**  
+   Dashboard → New project → anota **Project URL** y **API Keys** (anon public + service_role).
+
+2. **Variables de entorno**  
+   En la raíz del repo crea `.env.local` (puedes copiar `.env.local.example`):
+
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+   SUPABASE_SERVICE_ROLE_KEY=eyJ...
+   ```
+
+   Sustituye por los valores de tu proyecto (Settings → API).
+
+3. **Crear tablas y datos iniciales en Supabase**  
+   En el Dashboard: **SQL Editor** → New query.  
+   - Pega y ejecuta el contenido de `supabase/schema.sql`.  
+   - Luego ejecuta `supabase/seed.sql` (bar de ejemplo + staff con PIN `1234`).
+
+4. **Levantar Next.js**
+
+   ```bash
+   npm install
+   npm run dev
+   ```
+
+   Abre [http://localhost:3000](http://localhost:3000). Verás el selector de negocio; entra a **Bar La Esquina** (`/b/bar-la-esquina`).
+
+---
+
+### Opción B: Supabase local (Docker)
+
+1. **Instalar [Supabase CLI](https://supabase.com/docs/guides/cli)** y tener Docker en marcha.
+
+2. **Inicializar y arrancar Supabase en el repo**
+
+   ```bash
+   npx supabase init
+   npx supabase start
+   ```
+
+   La CLI te mostrará **API URL**, **anon key** y **service_role key**. Cópialos.
+
+3. **Aplicar schema y seed**
+
+   ```bash
+   npx supabase db reset
+   ```
+
+   Si el seed no se ejecuta por defecto, copia el contenido de `supabase/schema.sql` y `supabase/seed.sql` y ejecútalo en **Supabase Studio** (la URL local que muestra `supabase start`).
+
+4. **Configurar `.env.local`** con la URL y las keys que mostró `supabase start`.
+
+5. **Levantar el proyecto**
+
+   ```bash
+   npm install
+   npm run dev
+   ```
+
+   [http://localhost:3000](http://localhost:3000) → selector de negocio → `/b/bar-la-esquina`.
+
+---
+
+### Datos de prueba (seed)
+
+- **Bar:** Bar La Esquina, slug `bar-la-esquina`.
+- **Staff admin:** PIN `1234` (para añadir sellos y canjear premios en la wallet).
+- Crea usuarios desde la app (registro con email/contraseña) en `/b/bar-la-esquina/login`.
+
+---
+
 ## 1) ¿Qué hace la app?
 
 El bar coloca un **QR**. El cliente lo escanea y abre la web del bar:
