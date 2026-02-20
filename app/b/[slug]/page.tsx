@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabaseClient";
 import { useBusinessConfig } from "@/lib/client/useBusinessConfig";
 import { Button } from "@/components/ui/Button";
-import { theme } from "@/lib/theme";
+import { useTheme } from "@/themes/ThemeContext";
 
 export default function BarLanding() {
   const { slug } = useParams<{ slug: string }>();
@@ -27,6 +27,10 @@ export default function BarLanding() {
     })();
   }, [supabase]);
 
+  const theme = useTheme();
+  const c = theme.color;
+  const t = theme.tokens;
+
   if (loading || cfgLoading || !cfg) {
     return (
       <main
@@ -35,12 +39,12 @@ export default function BarLanding() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: theme.color.ivory,
-          color: theme.color.text,
-          fontFamily: theme.font.sans,
+          background: c.background,
+          color: c.text,
+          fontFamily: t.font.sans,
         }}
       >
-        <span style={{ fontSize: 15, color: theme.color.camelDark }}>{cfg?.texts?.common?.loading ?? "Cargando…"}</span>
+        <span style={{ fontSize: 15, color: c.secondary }}>{cfg?.texts?.common?.loading ?? "Cargando…"}</span>
       </main>
     );
   }
@@ -53,12 +57,12 @@ export default function BarLanding() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: theme.color.ivory,
-          color: theme.color.text,
-          fontFamily: theme.font.sans,
+          background: c.background,
+          color: c.text,
+          fontFamily: t.font.sans,
         }}
       >
-        <span style={{ fontSize: 15, color: theme.color.camelDark }}>{cfg.texts?.landing?.error_not_found ?? "Negocio no encontrado."}</span>
+        <span style={{ fontSize: 15, color: c.secondary }}>{cfg.texts?.landing?.error_not_found ?? "Negocio no encontrado."}</span>
       </main>
     );
   }
@@ -71,14 +75,14 @@ export default function BarLanding() {
     <main
       style={{
         minHeight: "100vh",
-        padding: theme.space.xl,
+        padding: t.space.xl,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        background: theme.color.ivory,
-        color: theme.color.text,
-        fontFamily: theme.font.sans,
+        background: c.background,
+        color: c.text,
+        fontFamily: t.font.sans,
       }}
     >
       <div style={{ width: "min(420px, 100%)", textAlign: "center" }}>
@@ -88,21 +92,21 @@ export default function BarLanding() {
             width: 88,
             height: 88,
             margin: "0 auto",
-            borderRadius: theme.radius,
+            borderRadius: t.radius,
             overflow: "hidden",
-            border: `1px solid ${theme.color.border}`,
-            background: theme.color.white,
+            border: `1px solid ${c.border}`,
+            background: c.white,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            marginBottom: theme.space.lg,
+            marginBottom: t.space.lg,
           }}
         >
           {logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={logoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (
-            <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: theme.color.camelDark }}>
+            <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: c.secondary }}>
               <path d="M10 40V20h6v2h2v-2h6v20h-2V24h-2v16h-2V24h-2v16H10z" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinejoin="round" />
               <path d="M14 26h2v2h-2zM20 26h2v2h-2z" stroke="currentColor" strokeWidth="1" fill="none" />
               <path d="M32 18c0-2.2 1.8-4 4-4s4 1.8 4 4v3H32v-3z" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
@@ -114,19 +118,19 @@ export default function BarLanding() {
         <h1
           style={{
             fontSize: 28,
-            fontWeight: theme.font.weight.semibold,
-            color: theme.color.text,
-            marginBottom: theme.space.xs,
+            fontWeight: t.font.weight.semibold,
+            color: c.text,
+            marginBottom: t.space.xs,
             lineHeight: 1.2,
           }}
         >
           {name}
         </h1>
-        <p style={{ fontSize: 15, color: theme.color.camelDark, marginBottom: theme.space.xl }}>
+        <p style={{ fontSize: 15, color: c.secondary, marginBottom: t.space.xl }}>
           {cfg.texts?.landing?.subtitle ?? "Programa de fidelización"}
         </p>
 
-        <div style={{ display: "flex", flexDirection: "row", flexWrap: "wrap", gap: theme.space.sm, justifyContent: "center" }}>
+        <div style={{ display: "flex", flexDirection: "row", flexWrap: "wrap", gap: t.space.sm, justifyContent: "center" }}>
           {!userId ? (
             <>
               <Button variant="primaryDark" onClick={() => router.push(`/b/${slug}/login`)} style={{ flex: "1 1 140px", minWidth: 140 }}>
@@ -154,10 +158,10 @@ export default function BarLanding() {
                 }}
                 style={{
                   width: "100%",
-                  padding: theme.space.sm,
+                  padding: t.space.sm,
                   background: "transparent",
                   border: "none",
-                  color: theme.color.camelDark,
+                  color: c.secondary,
                   fontSize: 13,
                   cursor: "pointer",
                   textDecoration: "underline",
@@ -169,7 +173,7 @@ export default function BarLanding() {
           )}
         </div>
 
-        <p style={{ marginTop: theme.space.xl, fontSize: 11, color: theme.color.camelDark, lineHeight: 1.4 }}>
+        <p style={{ marginTop: t.space.xl, fontSize: 11, color: c.secondary, lineHeight: 1.4 }}>
           {cfg.texts?.landing?.privacy_line_1}
           <br />
           {cfg.texts?.landing?.privacy_line_2}

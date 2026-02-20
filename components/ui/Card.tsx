@@ -1,6 +1,6 @@
 "use client";
 
-import { theme } from "@/lib/theme";
+import { useTheme } from "@/themes/ThemeContext";
 
 type CardProps = {
   children: React.ReactNode;
@@ -8,14 +8,18 @@ type CardProps = {
 };
 
 export function Card({ children, style }: CardProps) {
+  const theme = useTheme();
+  const color = theme.color;
+  const t = theme.tokens;
+
   return (
     <div
       style={{
-        borderRadius: theme.radius,
-        padding: theme.space.lg,
-        background: theme.color.white,
-        border: `1px solid ${theme.color.border}`,
-        boxShadow: `0 2px 12px ${theme.color.shadow}`,
+        borderRadius: t.radius,
+        padding: t.space.lg,
+        background: color.white,
+        border: `1px solid ${color.border}`,
+        boxShadow: `0 2px 12px ${color.shadow}`,
         ...style,
       }}
     >

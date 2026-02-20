@@ -8,10 +8,7 @@ import { useBusinessConfig } from "@/lib/client/useBusinessConfig";
 import type { WheelSegment } from "@/lib/CONFIG_SCHEMA";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { theme } from "@/lib/theme";
-
-/** Alternancia claro/oscuro como en mockup (texto blanco sobre segmentos) */
-const CAMEL_WHEEL_COLORS = [theme.color.camelLight, theme.color.camelDark, theme.color.camelLight, theme.color.camelDark, theme.color.camelLight, theme.color.camelDark, theme.color.camelLight, theme.color.camelDark];
+import { useTheme } from "@/themes/ThemeContext";
 
 function buildConicGradient(labels: string[], colors: string[]) {
   const step = 360 / Math.max(1, labels.length);
@@ -26,6 +23,17 @@ function buildConicGradient(labels: string[], colors: string[]) {
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
+}
+
+/** True si el color de fondo del segmento es claro (blanco/marfil) → usar texto negro */
+function isSegmentLight(hex: string): boolean {
+  const h = hex.replace("#", "");
+  if (h.length !== 6) return false;
+  const r = parseInt(h.slice(0, 2), 16) / 255;
+  const g = parseInt(h.slice(2, 4), 16) / 255;
+  const b = parseInt(h.slice(4, 6), 16) / 255;
+  const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+  return luminance > 0.85;
 }
 
 function useWheelSounds() {
@@ -100,6 +108,11 @@ export default function SpinPage() {
   const { tick, win } = useWheelSounds();
   const tickIntervalRef = useRef<number | null>(null);
 
+  const theme = useTheme();
+  const c = theme.color;
+  const t = theme.tokens;
+  const segmentColors = c.wheelSegmentColors ?? [c.primary, c.secondary, c.primary, c.secondary];
+
   const segments: WheelSegment[] = useMemo(() => {
     const raw = cfg?.wheel?.segments || [];
     const enabled = raw.filter((s) => s && s.enabled !== false);
@@ -107,15 +120,23 @@ export default function SpinPage() {
   }, [cfg?.wheel?.segments]);
 
   const labels = useMemo(() => segments.map((s) => s.label), [segments]);
-  /** Siempre paleta mockup: tonos camel alternados (claro/oscuro), texto blanco — como imagen2 */
-  const colors = CAMEL_WHEEL_COLORS;
+  const colors = useMemo(
+    () => (cfg?.wheel?.ui?.segment_colors?.length ? cfg.wheel.ui.segment_colors : segmentColors),
+    [cfg?.wheel?.ui?.segment_colors, segmentColors]
+  );
 
   const segmentAngle = useMemo(() => 360 / Math.max(1, labels.length), [labels.length]);
   const wheelBg = useMemo(() => buildConicGradient(labels, colors), [labels, colors]);
 
   useEffect(() => {
     function recalc() {
-      setWheelSize(clamp(Math.floor(window.innerWidth - 48), 260, 380));
+      if (typeof window === "undefined") return;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const maxW = w - 32;
+      const maxH = h - 220;
+      const size = Math.min(maxW, maxH, 380);
+      setWheelSize(clamp(Math.floor(size), 220, 380));
     }
     recalc();
     window.addEventListener("resize", recalc);
@@ -144,7 +165,7 @@ export default function SpinPage() {
   const fontSize = clamp(Math.round(wheelSize * 0.032), 10, 13);
 
   function fireConfetti() {
-    confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 }, colors: [theme.color.camel, theme.color.camelLight, theme.color.sand] });
+    confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 }, colors: [c.primary, c.secondary, c.surface] });
   }
 
   async function spin() {
@@ -198,8 +219,15 @@ export default function SpinPage() {
     if (tickIntervalRef.current) window.clearInterval(tickIntervalRef.current);
     tickIntervalRef.current = window.setInterval(() => tick(), 120);
 
-    const targetAngle = 360 * 5 + (360 - prizeIndex * segmentAngle - segmentAngle / 2);
-    setRotation(targetAngle);
+    // Ángulo final (0..360) que deja el segmento ganador bajo la flecha
+    const targetAngleMod = (360 - prizeIndex * segmentAngle - segmentAngle / 2 + 360) % 360;
+    setRotation((prev) => {
+      const currentMod = ((prev % 360) + 360) % 360;
+      // Cuántos grados sumar (0..360) para ir de currentMod a targetAngleMod
+      const delta = (targetAngleMod - currentMod + 360) % 360;
+      // 5 vueltas completas + delta para que caiga exactamente en el premio
+      return prev + 360 * 5 + delta;
+    });
 
     window.setTimeout(() => {
       if (tickIntervalRef.current) window.clearInterval(tickIntervalRef.current);
@@ -217,18 +245,20 @@ export default function SpinPage() {
   const isWin = Boolean(result && resultType && resultType !== "none");
   const name = cfg?.branding?.name || bar?.name || "Negocio";
 
+  const WheelPresentationComponent = theme.components?.WheelPresentation;
+
   return (
     <main
       style={{
         minHeight: "100vh",
-        padding: theme.space.lg,
+        padding: t.space.lg,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        background: theme.color.ivory,
-        color: theme.color.text,
-        fontFamily: theme.font.sans,
+        background: c.background,
+        color: c.text,
+        fontFamily: t.font.sans,
       }}
     >
       <div style={{ width: "min(520px, 100%)" }}>
@@ -237,125 +267,154 @@ export default function SpinPage() {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: theme.space.md,
+            marginBottom: t.space.md,
           }}
         >
           <div>
-            <div style={{ fontSize: 12, color: theme.color.camelDark }}>{cfg?.texts?.wheel?.title_kicker ?? "Ruleta"}</div>
-            <div style={{ fontWeight: theme.font.weight.semibold, fontSize: 18 }}>{name}</div>
+            <div style={{ fontSize: 12, color: c.secondary }}>{cfg?.texts?.wheel?.title_kicker ?? "Ruleta"}</div>
+            <div style={{ fontWeight: t.font.weight.semibold, fontSize: 18 }}>{name}</div>
           </div>
           <Button variant="secondary" style={{ width: "auto", padding: "10px 14px" }} onClick={() => router.push(`/b/${slug}/wallet`)}>
             {cfg?.texts?.wheel?.cta_wallet ?? "Mi wallet"}
           </Button>
         </div>
 
-        <Card style={{ padding: theme.space.xl, marginBottom: theme.space.lg }}>
-          {/* Puntero triangular oscuro (estilo madera) */}
-          <div
-            style={{
-              width: 0,
-              height: 0,
-              borderLeft: `${Math.round(wheelSize * 0.032)}px solid transparent`,
-              borderRight: `${Math.round(wheelSize * 0.032)}px solid transparent`,
-              borderTop: `${Math.round(wheelSize * 0.048)}px solid ${theme.color.wood}`,
-              margin: "0 auto",
-              position: "relative",
-              top: 8,
-              zIndex: 10,
-              filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.2))",
-            }}
-          />
-
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <div style={{ position: "relative", width: wheelSize, height: wheelSize }}>
-              <div
-                style={{
-                  width: wheelSize,
-                  height: wheelSize,
-                  borderRadius: "50%",
-                  background: wheelBg,
-                  transform: `rotate(${rotation}deg)`,
-                  transition: spinning ? "transform 4s cubic-bezier(0.33, 1, 0.68, 1)" : "none",
-                  border: `${rimSize}px solid ${theme.color.wood}`,
-                  boxSizing: "border-box",
-                  position: "relative",
-                  overflow: "hidden",
-                  boxShadow: `0 6px 24px rgba(0,0,0,0.12)`,
-                  touchAction: "manipulation",
-                }}
-              >
-                {labels.map((label, i) => {
-                  const mid = i * segmentAngle + segmentAngle / 2;
-                  const needsFlip = mid > 90 && mid < 270;
-                  const tangential = 90 + (needsFlip ? 180 : 0);
-                  return (
+        <Card style={{ padding: t.space.xl, marginBottom: t.space.lg }}>
+          {WheelPresentationComponent ? (
+            <>
+              <WheelPresentationComponent
+                segmentLabels={labels}
+                segmentColors={colors}
+                rotation={rotation}
+                spinning={spinning}
+                wheelSize={wheelSize}
+                centerContent={null}
+                pointerElement={null}
+                rimSize={rimSize}
+                fontSize={fontSize}
+                businessName={name}
+              />
+            </>
+          ) : (
+            <>
+              {/* Puntero: custom (ej. tijeras) o triangular por defecto */}
+              {theme.components?.WheelPointer ? (
+                theme.components.WheelPointer({ wheelSize })
+              ) : (
+                <div
+                  style={{
+                    width: 0,
+                    height: 0,
+                    borderLeft: `${Math.round(wheelSize * 0.032)}px solid transparent`,
+                    borderRight: `${Math.round(wheelSize * 0.032)}px solid transparent`,
+                    borderTop: `${Math.round(wheelSize * 0.048)}px solid ${c.wheelPointerColor ?? c.accent ?? c.secondary}`,
+                    margin: "0 auto",
+                    position: "relative",
+                    top: 8,
+                    zIndex: 10,
+                    filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.2))",
+                  }}
+                />
+              )}
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <div style={{ position: "relative", width: wheelSize, height: wheelSize }}>
+                  <div
+                    style={{
+                      width: wheelSize,
+                      height: wheelSize,
+                      borderRadius: "50%",
+                      background: wheelBg,
+                      transform: `rotate(${rotation}deg)`,
+                      transition: spinning ? "transform 4s cubic-bezier(0.33, 1, 0.68, 1)" : "none",
+                      border: `${rimSize}px solid ${c.accent ?? c.secondary}`,
+                      boxSizing: "border-box",
+                      position: "relative",
+                      overflow: "hidden",
+                      boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
+                      touchAction: "manipulation",
+                    }}
+                  >
+                    {labels.map((label, i) => {
+                      const mid = i * segmentAngle + segmentAngle / 2;
+                      const needsFlip = mid > 90 && mid < 270;
+                      const tangential = 90 + (needsFlip ? 180 : 0);
+                      const segmentColor = colors[i % colors.length];
+                      const useBlackText = isSegmentLight(segmentColor);
+                      return (
+                        <div
+                          key={i}
+                          style={{
+                            position: "absolute",
+                            left: "50%",
+                            top: "50%",
+                            width: 0,
+                            height: 0,
+                            transform: `rotate(${mid}deg) translateY(-${radius}px)`,
+                            transformOrigin: "center",
+                            pointerEvents: "none",
+                            userSelect: "none",
+                          }}
+                        >
+                          <div
+                            style={{
+                              transform: `translateX(-50%) rotate(${tangential}deg)`,
+                              width: textBoxW,
+                              maxWidth: textBoxW,
+                              maxHeight: textBoxMaxH,
+                              padding: "2px 4px",
+                              boxSizing: "border-box",
+                              textAlign: "center",
+                              fontWeight: t.font.weight.medium,
+                              fontSize,
+                              lineHeight: 1.05,
+                              wordBreak: "break-word",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              color: useBlackText ? "#1A1A1A" : c.white,
+                              textShadow: useBlackText ? "0 1px 1px rgba(255,255,255,0.5)" : "0 1px 2px rgba(0,0,0,0.2)",
+                            }}
+                            title={label}
+                          >
+                            {label}
+                          </div>
+                        </div>
+                      );
+                    })}
                     <div
-                      key={i}
                       style={{
                         position: "absolute",
-                        left: "50%",
-                        top: "50%",
-                        width: 0,
-                        height: 0,
-                        transform: `rotate(${mid}deg) translateY(-${radius}px)`,
-                        transformOrigin: "center",
+                        inset: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                         pointerEvents: "none",
-                        userSelect: "none",
                       }}
                     >
                       <div
                         style={{
-                          transform: `translateX(-50%) rotate(${tangential}deg)`,
-                          width: textBoxW,
-                          maxWidth: textBoxW,
-                          maxHeight: textBoxMaxH,
-                          padding: "2px 4px",
-                          boxSizing: "border-box",
-                          textAlign: "center",
-                          fontWeight: theme.font.weight.medium,
-                          fontSize,
-                          lineHeight: 1.05,
-                          wordBreak: "break-word",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          color: theme.color.white,
-                          textShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                          width: centerSize,
+                          height: centerSize,
+                          borderRadius: "50%",
+                          background: c.white,
+                          border: `2px solid ${c.primary}`,
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
                         }}
-                        title={label}
                       >
-                        {label}
+                        {theme.components?.WheelCenterContent?.({
+                          size: centerSize,
+                        })}
                       </div>
                     </div>
-                  );
-                })}
-
-                {/* Centro blanco con borde dorado como en mockup */}
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    pointerEvents: "none",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: centerSize,
-                      height: centerSize,
-                      borderRadius: "50%",
-                      background: theme.color.white,
-                      border: `2px solid ${theme.color.camel}`,
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-                    }}
-                  />
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+            </>
+          )}
 
-          <div style={{ marginTop: theme.space.lg }}>
+          <div style={{ marginTop: t.space.lg }}>
             <Button onClick={spin} disabled={spinning}>
               {spinning ? cfg?.texts?.wheel?.spinning ?? "Girando…" : cfg?.texts?.wheel?.cta_spin ?? "Girar ruleta"}
             </Button>
@@ -363,20 +422,20 @@ export default function SpinPage() {
             {result && (
               <div
                 style={{
-                  marginTop: theme.space.md,
-                  padding: theme.space.md,
+                  marginTop: t.space.md,
+                  padding: t.space.md,
                   borderRadius: 10,
-                  background: theme.color.ivory,
-                  border: `1px solid ${theme.color.border}`,
+                  background: c.background,
+                  border: `1px solid ${c.border}`,
                 }}
               >
-                <div style={{ fontSize: 12, color: theme.color.camelDark }}>{cfg?.texts?.wheel?.result_title ?? "Resultado"}</div>
-                <div style={{ fontSize: 17, fontWeight: theme.font.weight.semibold, marginTop: 4, color: theme.color.text }}>
+                <div style={{ fontSize: 12, color: c.secondary }}>{cfg?.texts?.wheel?.result_title ?? "Resultado"}</div>
+                <div style={{ fontSize: 17, fontWeight: t.font.weight.semibold, marginTop: 4, color: c.text }}>
                   {result}
                 </div>
                 {isWin && (
                   <>
-                    <p style={{ fontSize: 13, color: theme.color.camelDark, marginTop: 6 }}>
+                    <p style={{ fontSize: 13, color: c.secondary, marginTop: 6 }}>
                       {saved
                         ? cfg?.texts?.wheel?.saved_ok ?? "Premio guardado en tu wallet."
                         : cfg?.texts?.wheel?.saved_fail ?? "No se pudo guardar el premio."}
@@ -389,7 +448,7 @@ export default function SpinPage() {
               </div>
             )}
 
-            <Button variant="secondary" style={{ marginTop: theme.space.sm }} onClick={() => router.push(`/b/${slug}`)}>
+            <Button variant="secondary" style={{ marginTop: t.space.sm }} onClick={() => router.push(`/b/${slug}`)}>
               Volver al negocio
             </Button>
           </div>

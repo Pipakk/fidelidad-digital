@@ -7,7 +7,7 @@ import { BusinessConfigSchema } from "@/lib/CONFIG_SCHEMA";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
-import { theme } from "@/lib/theme";
+import { useTheme } from "@/themes/ThemeContext";
 
 function prettyJson(v: unknown) {
   return JSON.stringify(v, null, 2);
@@ -16,6 +16,9 @@ function prettyJson(v: unknown) {
 export default function AdminConfigPage() {
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
+  const theme = useTheme();
+  const c = theme.color;
+  const t = theme.tokens;
 
   const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
@@ -99,31 +102,31 @@ export default function AdminConfigPage() {
     <main
       style={{
         minHeight: "100vh",
-        padding: theme.space.lg,
-        background: theme.color.ivory,
-        color: theme.color.text,
-        fontFamily: theme.font.sans,
+        padding: t.space.lg,
+        background: c.background,
+        color: c.text,
+        fontFamily: t.font.sans,
       }}
     >
       <div style={{ maxWidth: 920, margin: "0 auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: theme.space.lg }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: t.space.lg }}>
           <div>
-            <div style={{ fontSize: 12, color: theme.color.camelDark }}>Admin · Config negocio</div>
-            <div style={{ fontSize: 20, fontWeight: theme.font.weight.semibold }}>/{slug}</div>
+            <div style={{ fontSize: 12, color: c.secondary }}>Admin · Config negocio</div>
+            <div style={{ fontSize: 20, fontWeight: t.font.weight.semibold }}>/{slug}</div>
           </div>
           <Button variant="secondary" style={{ width: "auto", padding: "10px 14px" }} onClick={() => router.push(`/b/${slug}`)}>
             Volver
           </Button>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: theme.space.md }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: t.space.md }}>
           <Card>
-            <div style={{ fontSize: 14, fontWeight: theme.font.weight.medium, marginBottom: 4 }}>Acceso</div>
-            <p style={{ fontSize: 12, color: theme.color.camelDark, marginBottom: theme.space.sm }}>
+            <div style={{ fontSize: 14, fontWeight: t.font.weight.medium, marginBottom: 4 }}>Acceso</div>
+            <p style={{ fontSize: 12, color: c.secondary, marginBottom: t.space.sm }}>
               PIN con rol <code>admin</code> o <code>manager</code> en <code>staff_users</code>.
             </p>
             <Input value={pin} onChange={(e) => setPin(e.target.value)} placeholder="PIN admin" />
-            <div style={{ display: "flex", gap: theme.space.xs, marginTop: theme.space.sm }}>
+            <div style={{ display: "flex", gap: t.space.xs, marginTop: t.space.sm }}>
               <Button onClick={loadConfig} disabled={loading} style={{ flex: 1 }}>
                 Cargar
               </Button>
@@ -131,12 +134,12 @@ export default function AdminConfigPage() {
                 Guardar
               </Button>
             </div>
-            {message && <p style={{ marginTop: theme.space.sm, fontSize: 13, color: theme.color.camelDark }}>{message}</p>}
+            {message && <p style={{ marginTop: t.space.sm, fontSize: 13, color: c.secondary }}>{message}</p>}
           </Card>
 
           <Card>
-            <div style={{ fontSize: 14, fontWeight: theme.font.weight.medium, marginBottom: 4 }}>Validación</div>
-            <p style={{ fontSize: 13, color: theme.color.camelDark }}>
+            <div style={{ fontSize: 14, fontWeight: t.font.weight.medium, marginBottom: 4 }}>Validación</div>
+            <p style={{ fontSize: 13, color: c.secondary }}>
               {configText.trim()
                 ? parsed
                   ? BusinessConfigSchema.safeParse(parsed).success
@@ -146,7 +149,7 @@ export default function AdminConfigPage() {
                 : "—"}
             </p>
             {issues.length > 0 && (
-              <ul style={{ marginTop: theme.space.sm, paddingLeft: 18, fontSize: 12, color: theme.color.text }}>
+              <ul style={{ marginTop: t.space.sm, paddingLeft: 18, fontSize: 12, color: c.text }}>
                 {issues.slice(0, 12).map((e, idx) => (
                   <li key={idx} style={{ marginBottom: 4 }}>
                     <code>{e}</code>
@@ -158,8 +161,8 @@ export default function AdminConfigPage() {
           </Card>
         </div>
 
-        <Card style={{ marginTop: theme.space.md }}>
-          <div style={{ fontSize: 14, fontWeight: theme.font.weight.medium, marginBottom: theme.space.sm }}>Editor JSON</div>
+        <Card style={{ marginTop: t.space.md }}>
+          <div style={{ fontSize: 14, fontWeight: t.font.weight.medium, marginBottom: t.space.sm }}>Editor JSON</div>
           <textarea
             value={configText}
             onChange={(e) => setConfigText(e.target.value)}
@@ -169,11 +172,11 @@ export default function AdminConfigPage() {
               width: "100%",
               minHeight: 480,
               resize: "vertical",
-              padding: theme.space.sm,
-              borderRadius: theme.radius,
-              border: `1px solid ${theme.color.border}`,
-              background: theme.color.white,
-              color: theme.color.text,
+              padding: t.space.sm,
+              borderRadius: t.radius,
+              border: `1px solid ${c.border}`,
+              background: c.white,
+              color: c.text,
               outline: "none",
               boxSizing: "border-box",
               fontFamily: "ui-monospace, monospace",

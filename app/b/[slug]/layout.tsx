@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ConfigService } from "@/lib/config/ConfigService";
+import { BarThemeWrapper } from "@/components/providers/BarThemeWrapper";
 import { theme } from "@/lib/theme";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -66,5 +67,5 @@ export default async function BarLayout({
     );
   }
 
-  return <>{children}</>;
+  return <BarThemeWrapper slug={slug}>{children}</BarThemeWrapper>;
 }

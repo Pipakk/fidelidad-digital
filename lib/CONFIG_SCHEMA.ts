@@ -24,15 +24,24 @@ export const WheelSegmentSchema = z.object({
 
 export type WheelSegment = z.infer<typeof WheelSegmentSchema>;
 
+/** Theme/business type key for dynamic layout and styling (cafe, bar, barber, gym, retail, etc.) */
+export const BusinessTypeSchema = z.enum(["cafe", "bar", "barber", "gym", "retail"]);
+export type BusinessType = z.infer<typeof BusinessTypeSchema>;
+
 export const BusinessConfigSchema = z
   .object({
     version: z.number().int().positive().default(1),
 
+    /** Resolved theme key: used by ThemeRegistry. Falls back to business_type. */
+    theme: z.string().min(1).optional(),
+    /** Business vertical: used for default theme when theme is not set. */
+    business_type: BusinessTypeSchema.optional(),
+
     branding: z
       .object({
         name: z.string().min(1).optional(),
-        logo_url: z.string().url().optional(),
-        favicon_url: z.string().url().optional(),
+        logo_url: z.union([z.string().url(), z.literal(null)]).optional(),
+        favicon_url: z.union([z.string().url(), z.literal(null)]).optional(),
         theme: z
           .object({
             background: z.string().min(1).optional(),

@@ -1,6 +1,6 @@
 "use client";
 
-import { theme } from "@/lib/theme";
+import { useTheme } from "@/themes/ThemeContext";
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "primaryDark" | "secondary";
@@ -8,12 +8,16 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 export function Button({ variant = "primary", children, style, ...props }: ButtonProps) {
+  const theme = useTheme();
+  const color = theme.color;
+  const t = theme.tokens;
+
   const base: React.CSSProperties = {
-    padding: theme.space.sm,
-    borderRadius: theme.radius,
+    padding: t.space.sm,
+    borderRadius: t.radius,
     border: "1px solid transparent",
     cursor: "pointer",
-    fontWeight: theme.font.weight.semibold,
+    fontWeight: t.font.weight.semibold,
     fontSize: 15,
     width: "100%",
     transition: "background 0.15s, border-color 0.15s",
@@ -21,23 +25,23 @@ export function Button({ variant = "primary", children, style, ...props }: Butto
 
   const primary: React.CSSProperties = {
     ...base,
-    background: theme.color.camel,
-    color: theme.color.text,
-    borderColor: theme.color.camel,
+    background: color.primary,
+    color: color.text,
+    borderColor: color.primary,
   };
 
   const primaryDark: React.CSSProperties = {
     ...base,
-    background: theme.color.primaryDark,
-    color: theme.color.white,
-    borderColor: theme.color.primaryDark,
+    background: color.primaryDark,
+    color: color.white,
+    borderColor: color.primaryDark,
   };
 
   const secondary: React.CSSProperties = {
     ...base,
     background: "transparent",
-    color: theme.color.camelDark,
-    borderColor: theme.color.camel,
+    color: color.secondary,
+    borderColor: color.primary,
   };
 
   const styleMap = { primary, primaryDark, secondary };
@@ -48,22 +52,22 @@ export function Button({ variant = "primary", children, style, ...props }: Butto
       style={{ ...styles, ...style }}
       onMouseEnter={(e) => {
         if (variant === "primary") {
-          e.currentTarget.style.background = theme.color.camelDark;
-          e.currentTarget.style.borderColor = theme.color.camelDark;
+          e.currentTarget.style.background = color.secondary;
+          e.currentTarget.style.borderColor = color.secondary;
         } else if (variant === "primaryDark") {
-          e.currentTarget.style.background = theme.color.camelDark;
-          e.currentTarget.style.borderColor = theme.color.camelDark;
+          e.currentTarget.style.background = color.secondary;
+          e.currentTarget.style.borderColor = color.secondary;
         } else {
-          e.currentTarget.style.background = theme.color.sand;
+          e.currentTarget.style.background = color.surface;
         }
       }}
       onMouseLeave={(e) => {
         if (variant === "primary") {
-          e.currentTarget.style.background = theme.color.camel;
-          e.currentTarget.style.borderColor = theme.color.camel;
+          e.currentTarget.style.background = color.primary;
+          e.currentTarget.style.borderColor = color.primary;
         } else if (variant === "primaryDark") {
-          e.currentTarget.style.background = theme.color.primaryDark;
-          e.currentTarget.style.borderColor = theme.color.primaryDark;
+          e.currentTarget.style.background = color.primaryDark;
+          e.currentTarget.style.borderColor = color.primaryDark;
         } else {
           e.currentTarget.style.background = "transparent";
         }

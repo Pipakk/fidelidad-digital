@@ -1,22 +1,26 @@
 "use client";
 
-import { theme } from "@/lib/theme";
+import { useTheme } from "@/themes/ThemeContext";
 
 type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
   label?: string;
 };
 
 export function Input({ label, style, ...props }: InputProps) {
+  const theme = useTheme();
+  const color = theme.color;
+  const t = theme.tokens;
+
   return (
-    <div style={{ marginBottom: theme.space.sm }}>
+    <div style={{ marginBottom: t.space.sm }}>
       {label && (
         <label
           style={{
             display: "block",
             fontSize: 14,
-            color: theme.color.text,
+            color: color.text,
             marginBottom: 6,
-            fontWeight: theme.font.weight.medium,
+            fontWeight: t.font.weight.medium,
           }}
         >
           {label}
@@ -25,20 +29,20 @@ export function Input({ label, style, ...props }: InputProps) {
       <input
         style={{
           width: "100%",
-          padding: theme.space.sm,
-          borderRadius: theme.radius,
-          border: `1px solid ${theme.color.border}`,
-          background: theme.color.white,
-          color: theme.color.text,
+          padding: t.space.sm,
+          borderRadius: t.radius,
+          border: `1px solid ${color.border}`,
+          background: color.white,
+          color: color.text,
           fontSize: 15,
           outline: "none",
           boxSizing: "border-box",
         }}
         onFocus={(e) => {
-          e.currentTarget.style.borderColor = theme.color.borderFocus;
+          e.currentTarget.style.borderColor = color.borderFocus;
         }}
         onBlur={(e) => {
-          e.currentTarget.style.borderColor = theme.color.border;
+          e.currentTarget.style.borderColor = color.border;
         }}
         {...props}
       />

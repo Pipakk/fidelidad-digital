@@ -15,6 +15,8 @@ values (
   true,
   '{
     "version": 1,
+    "theme": "barber",
+    "business_type": "barber",
     "branding": {
       "name": "Barbería Omar Bien Abdaljalil",
       "logo_url": null,
@@ -161,3 +163,13 @@ where not exists (
 -- URL de la demo: https://tu-dominio.com/b/omar-bien-abdaljalil
 -- PIN staff para añadir sellos / canjear: 1234
 -- ============================================================
+--
+-- Si YA creaste el negocio antes (sin theme barber), ejecuta solo esto
+-- para que use el diseño barbería (tijeras, ruleta con nombre, etc.):
+--
+-- update public.bars
+-- set config = jsonb_set(
+--   jsonb_set(config, '{theme}', '"barber"'),
+--   '{business_type}', '"barber"'
+-- )
+-- where slug = 'omar-bien-abdaljalil';

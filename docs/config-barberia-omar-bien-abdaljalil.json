@@ -1,5 +1,7 @@
 {
   "version": 1,
+  "theme": "barber",
+  "business_type": "barber",
   "branding": {
     "name": "Barbería Omar Bien Abdaljalil",
     "logo_url": null,

@@ -7,12 +7,15 @@ import { useBusinessConfig } from "@/lib/client/useBusinessConfig";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
-import { theme } from "@/lib/theme";
+import { useTheme } from "@/themes/ThemeContext";
 
 export default function LoginPage() {
   const supabase = useMemo(() => supabaseBrowser(), []);
   const router = useRouter();
   const { slug } = useParams<{ slug: string }>();
+  const theme = useTheme();
+  const c = theme.color;
+  const t = theme.tokens;
 
   const { data: cfgData } = useBusinessConfig(slug);
   const cfg = cfgData?.config;
@@ -67,13 +70,13 @@ export default function LoginPage() {
     <main
       style={{
         minHeight: "100vh",
-        padding: theme.space.lg,
+        padding: t.space.lg,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: theme.color.ivory,
-        color: theme.color.text,
-        fontFamily: theme.font.sans,
+        background: c.background,
+        color: c.text,
+        fontFamily: t.font.sans,
       }}
     >
       <div style={{ width: "min(400px, 100%)" }}>
@@ -81,14 +84,14 @@ export default function LoginPage() {
           style={{
             textAlign: "center",
             fontSize: 22,
-            fontWeight: theme.font.weight.semibold,
-            color: theme.color.text,
-            marginBottom: theme.space.xs,
+            fontWeight: t.font.weight.semibold,
+            color: c.text,
+            marginBottom: t.space.xs,
           }}
         >
           {cfg?.texts?.login?.title_kicker ?? "Acceso"}
         </h1>
-        <p style={{ textAlign: "center", fontSize: 14, color: theme.color.camelDark, marginBottom: theme.space.lg }}>
+        <p style={{ textAlign: "center", fontSize: 14, color: c.secondary, marginBottom: t.space.lg }}>
           {name}
         </p>
 
@@ -96,12 +99,12 @@ export default function LoginPage() {
           <div
             style={{
               display: "flex",
-              gap: theme.space.xs,
-              marginBottom: theme.space.md,
+              gap: t.space.xs,
+              marginBottom: t.space.md,
               padding: 4,
               borderRadius: 10,
-              background: theme.color.ivory,
-              border: `1px solid ${theme.color.border}`,
+              background: c.background,
+              border: `1px solid ${c.border}`,
             }}
           >
             <button
@@ -109,14 +112,14 @@ export default function LoginPage() {
               onClick={() => setMode("signup")}
               style={{
                 flex: 1,
-                padding: theme.space.sm,
+                padding: t.space.sm,
                 borderRadius: 8,
                 border: "none",
                 cursor: "pointer",
-                fontWeight: theme.font.weight.medium,
-                background: mode === "signup" ? theme.color.white : "transparent",
-                color: mode === "signup" ? theme.color.text : theme.color.camelDark,
-                boxShadow: mode === "signup" ? `0 1px 3px ${theme.color.shadow}` : "none",
+                fontWeight: t.font.weight.medium,
+                background: mode === "signup" ? c.white : "transparent",
+                color: mode === "signup" ? c.text : c.secondary,
+                boxShadow: mode === "signup" ? `0 1px 3px ${c.shadow}` : "none",
               }}
             >
               {cfg?.texts?.login?.tab_signup ?? "Crear cuenta"}
@@ -126,14 +129,14 @@ export default function LoginPage() {
               onClick={() => setMode("login")}
               style={{
                 flex: 1,
-                padding: theme.space.sm,
+                padding: t.space.sm,
                 borderRadius: 8,
                 border: "none",
                 cursor: "pointer",
-                fontWeight: theme.font.weight.medium,
-                background: mode === "login" ? theme.color.white : "transparent",
-                color: mode === "login" ? theme.color.text : theme.color.camelDark,
-                boxShadow: mode === "login" ? `0 1px 3px ${theme.color.shadow}` : "none",
+                fontWeight: t.font.weight.medium,
+                background: mode === "login" ? c.white : "transparent",
+                color: mode === "login" ? c.text : c.secondary,
+                boxShadow: mode === "login" ? `0 1px 3px ${c.shadow}` : "none",
               }}
             >
               {cfg?.texts?.login?.tab_login ?? "Entrar"}
@@ -157,7 +160,7 @@ export default function LoginPage() {
             autoComplete={mode === "signup" ? "new-password" : "current-password"}
           />
 
-          <div style={{ marginTop: theme.space.md }}>
+          <div style={{ marginTop: t.space.md }}>
             <Button onClick={submit} disabled={loading}>
               {loading
                 ? cfg?.texts?.login?.processing ?? "Procesando…"
@@ -167,13 +170,13 @@ export default function LoginPage() {
             </Button>
           </div>
 
-          <div style={{ marginTop: theme.space.sm }}>
+          <div style={{ marginTop: t.space.sm }}>
             <Button variant="secondary" onClick={() => router.push(`/b/${slug}`)}>
               Volver
             </Button>
           </div>
 
-          <p style={{ marginTop: theme.space.md, fontSize: 11, color: theme.color.camelDark, lineHeight: 1.4 }}>
+          <p style={{ marginTop: t.space.md, fontSize: 11, color: c.secondary, lineHeight: 1.4 }}>
             {cfg?.texts?.login?.hint_line_1 ?? "Acceso con email y contraseña."}
             <br />
             {cfg?.texts?.login?.hint_line_2 ?? "Usa una contraseña de 8+ caracteres."}

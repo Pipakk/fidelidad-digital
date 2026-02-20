@@ -71,7 +71,7 @@ async function fetchBusinessBySlug(slug: string): Promise<BusinessRow | null> {
 }
 
 const cachedFetchBusinessBySlug = unstable_cache(fetchBusinessBySlug, ["business-by-slug"], {
-  revalidate: 60, // reasonable cache without breaking SSR
+  revalidate: 10, // config/theme changes picked up within 10s
 });
 
 export const ConfigService = {
@@ -104,12 +104,12 @@ export const ConfigService = {
       return { business: bar, config: validated.value, issues: [] as string[] };
     }
 
-    // If config is invalid, fall back to safe defaults merged with legacy.
-    const fallbackMerged = deepMerge(DEFAULT_CONFIG, legacy as any);
+    // If config is invalid, fallback still includes bar.config so theme/business_type/texts are preserved.
+    const fallbackMerged = deepMerge(DEFAULT_CONFIG, deepMerge(legacy as any, (bar.config ?? {}) as any));
     const fallbackValidated = validateBusinessConfig(fallbackMerged);
     return {
       business: bar,
-      config: fallbackValidated.ok ? fallbackValidated.value : DEFAULT_CONFIG,
+      config: fallbackValidated.ok ? fallbackValidated.value : merged as any,
       issues: validated.issues,
     };
   }),

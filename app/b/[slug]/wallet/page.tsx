@@ -7,7 +7,7 @@ import { useBusinessConfig } from "@/lib/client/useBusinessConfig";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
-import { theme } from "@/lib/theme";
+import { useTheme } from "@/themes/ThemeContext";
 
 type Membership = {
   id: string;
@@ -34,15 +34,18 @@ function formatDate(d: string) {
   }
 }
 
-function StampDot({ filled }: { filled: boolean }) {
+/** Default stamp (cafe/bar): circle, filled = ☕, unfilled = dot */
+function DefaultStampDot({ filled }: { filled: boolean }) {
+  const theme = useTheme();
+  const c = theme.color;
   return (
     <div
       style={{
         width: 28,
         height: 28,
         borderRadius: "50%",
-        background: filled ? theme.color.camelDark : theme.color.sand,
-        border: `1px solid ${filled ? theme.color.textSoft : theme.color.border}`,
+        background: filled ? c.secondary : c.surface,
+        border: `1px solid ${filled ? c.textSoft : c.border}`,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -51,7 +54,7 @@ function StampDot({ filled }: { filled: boolean }) {
       {filled ? (
         <span style={{ fontSize: 14 }} title="Sello">☕</span>
       ) : (
-        <div style={{ width: 4, height: 4, borderRadius: "50%", background: theme.color.camelDark }} />
+        <div style={{ width: 4, height: 4, borderRadius: "50%", background: c.secondary }} />
       )}
     </div>
   );
@@ -205,11 +208,15 @@ export default function WalletPage() {
     await refresh();
   }
 
+  const theme = useTheme();
+  const StampComponent = theme.components?.Stamp ?? DefaultStampDot;
   const stampsGoal = cfg?.stamps?.goal ?? 8;
   const stamps = membership?.stamps_count ?? 0;
   const wheelEnabled = Boolean(cfg?.features?.wheel && cfg?.wheel?.enabled);
   const name = cfg?.branding?.name || business?.name || "Negocio";
   const logoUrl = cfg?.branding?.logo_url || business?.logo_url;
+  const c = theme.color;
+  const t = theme.tokens;
 
   if (!loading && !cfgLoading && !customerId) {
     router.replace(`/b/${slug}/login`);
@@ -220,10 +227,10 @@ export default function WalletPage() {
     <main
       style={{
         minHeight: "100vh",
-        padding: theme.space.lg,
-        background: theme.color.ivory,
-        color: theme.color.text,
-        fontFamily: theme.font.sans,
+        padding: t.space.lg,
+        background: c.background,
+        color: c.text,
+        fontFamily: t.font.sans,
       }}
     >
       <div style={{ maxWidth: 520, margin: "0 auto" }}>
@@ -232,18 +239,18 @@ export default function WalletPage() {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: theme.space.sm,
-            marginBottom: theme.space.lg,
+            gap: t.space.sm,
+            marginBottom: t.space.lg,
           }}
         >
           <div
             style={{
               width: 48,
               height: 48,
-              borderRadius: theme.radius,
+              borderRadius: t.radius,
               overflow: "hidden",
-              border: `1px solid ${theme.color.border}`,
-              background: theme.color.white,
+              border: `1px solid ${c.border}`,
+              background: c.white,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -253,14 +260,14 @@ export default function WalletPage() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={logoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             ) : (
-              <span style={{ fontSize: 20, color: theme.color.camel }}>—</span>
+              <span style={{ fontSize: 20, color: c.primary }}>—</span>
             )}
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, color: theme.color.camelDark }}>{cfg?.texts?.wallet?.title_kicker ?? "Tu wallet"}</div>
-            <div style={{ fontWeight: theme.font.weight.semibold, fontSize: 18 }}>{name}</div>
+            <div style={{ fontSize: 12, color: c.secondary }}>{cfg?.texts?.wallet?.title_kicker ?? "Tu wallet"}</div>
+            <div style={{ fontWeight: t.font.weight.semibold, fontSize: 18 }}>{name}</div>
           </div>
-          <div style={{ display: "flex", gap: theme.space.xs }}>
+          <div style={{ display: "flex", gap: t.space.xs }}>
             {wheelEnabled && (
               <Button
                 style={{ width: "auto", padding: "10px 14px" }}
@@ -276,30 +283,30 @@ export default function WalletPage() {
         </div>
 
         {/* Tarjeta de puntos */}
-        <Card style={{ marginBottom: theme.space.lg }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: theme.space.sm }}>
-            <span style={{ fontSize: 15, fontWeight: theme.font.weight.medium }}>
+        <Card style={{ marginBottom: t.space.lg }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: t.space.sm }}>
+            <span style={{ fontSize: 15, fontWeight: t.font.weight.medium }}>
               {cfg?.texts?.wallet?.section_stamps ?? "Tus sellos"}
             </span>
-            <span style={{ fontSize: 14, color: theme.color.camelDark }}>{stamps} / {stampsGoal}</span>
+            <span style={{ fontSize: 14, color: c.secondary }}>{stamps} / {stampsGoal}</span>
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             {Array.from({ length: stampsGoal }).map((_, i) => (
-              <StampDot key={i} filled={i < stamps} />
+              <StampComponent key={i} filled={i < stamps} />
             ))}
           </div>
-          <p style={{ marginTop: theme.space.sm, fontSize: 13, color: theme.color.camelDark }}>
+          <p style={{ marginTop: t.space.sm, fontSize: 13, color: c.secondary }}>
             {cfg?.texts?.wallet?.reward_for_completion ?? "Al completar:"}{" "}
             <strong>{cfg?.stamps?.reward_title ?? "Premio"}</strong>
           </p>
         </Card>
 
         {/* Acciones staff */}
-        <Card style={{ marginBottom: theme.space.lg }}>
-          <div style={{ fontSize: 15, fontWeight: theme.font.weight.medium, marginBottom: 4 }}>
+        <Card style={{ marginBottom: t.space.lg }}>
+          <div style={{ fontSize: 15, fontWeight: t.font.weight.medium, marginBottom: 4 }}>
             {cfg?.texts?.wallet?.staff_actions_title ?? "Acciones (staff)"}
           </div>
-          <p style={{ fontSize: 13, color: theme.color.camelDark, marginBottom: theme.space.sm }}>
+          <p style={{ fontSize: 13, color: c.secondary, marginBottom: t.space.sm }}>
             {cfg?.texts?.wallet?.staff_actions_subtitle ??
               "PIN del establecimiento para validar consumo o canjear premios."}
           </p>
@@ -308,34 +315,34 @@ export default function WalletPage() {
             onChange={(e) => setPin(e.target.value)}
             placeholder={cfg?.texts?.wallet?.pin_placeholder ?? "PIN"}
           />
-          <Button onClick={addStamp} disabled={busy} style={{ marginTop: theme.space.xs }}>
+          <Button onClick={addStamp} disabled={busy} style={{ marginTop: t.space.xs }}>
             {busy ? cfg?.texts?.wallet?.processing ?? "Procesando…" : cfg?.texts?.wallet?.add_stamp ?? "Añadir 1 sello"}
           </Button>
         </Card>
 
         {/* Premios activos */}
         <Card>
-          <div style={{ fontSize: 15, fontWeight: theme.font.weight.medium, marginBottom: theme.space.sm }}>
+          <div style={{ fontSize: 15, fontWeight: t.font.weight.medium, marginBottom: t.space.sm }}>
             {cfg?.texts?.wallet?.rewards_title ?? "Premios activos"}
           </div>
 
           {loading ? (
-            <p style={{ fontSize: 14, color: theme.color.camelDark }}>{cfg?.texts?.common?.loading ?? "Cargando…"}</p>
+            <p style={{ fontSize: 14, color: c.secondary }}>{cfg?.texts?.common?.loading ?? "Cargando…"}</p>
           ) : rewards.length === 0 ? (
-            <p style={{ fontSize: 14, color: theme.color.camelDark }}>{cfg?.texts?.wallet?.rewards_empty ?? "Sin premios activos."}</p>
+            <p style={{ fontSize: 14, color: c.secondary }}>{cfg?.texts?.wallet?.rewards_empty ?? "Sin premios activos."}</p>
           ) : (
-            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: theme.space.sm }}>
+            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: t.space.sm }}>
               {rewards.map((r) => (
                 <li
                   key={r.id}
                   style={{
-                    padding: theme.space.md,
-                    borderRadius: theme.radius,
-                    border: `1px solid ${theme.color.border}`,
-                    background: theme.color.ivory,
+                    padding: t.space.md,
+                    borderRadius: t.radius,
+                    border: `1px solid ${c.border}`,
+                    background: c.background,
                     display: "flex",
                     alignItems: "flex-start",
-                    gap: theme.space.sm,
+                    gap: t.space.sm,
                   }}
                 >
                   <div
@@ -343,8 +350,8 @@ export default function WalletPage() {
                       width: 48,
                       height: 48,
                       borderRadius: 10,
-                      background: theme.color.sand,
-                      border: `1px solid ${theme.color.border}`,
+                      background: c.surface,
+                      border: `1px solid ${c.border}`,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -352,19 +359,24 @@ export default function WalletPage() {
                       flexShrink: 0,
                     }}
                   >
-                    🍺
+                    {theme.key === "barber" ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src="/themes/barber/scissors.png" alt="" width={28} height={28} style={{ objectFit: "contain" }} />
+                    ) : (
+                      "🍺"
+                    )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: theme.font.weight.semibold, fontSize: 15, color: theme.color.text }}>
+                    <div style={{ fontWeight: t.font.weight.semibold, fontSize: 15, color: c.text }}>
                       1× {r.title}
                     </div>
-                    <div style={{ fontSize: 13, color: theme.color.ready, marginTop: 2 }}>
+                    <div style={{ fontSize: 13, color: c.ready ?? c.text, marginTop: 2 }}>
                       ✔ {cfg?.texts?.wallet?.rewards_ready ?? "Listo para usar"}
                     </div>
-                    <div style={{ fontSize: 12, color: theme.color.camelDark, marginTop: 4 }}>
+                    <div style={{ fontSize: 12, color: c.secondary, marginTop: 4 }}>
                       {cfg?.texts?.wallet?.rewards_expires_at ?? "Caduca:"} {formatDate(r.expires_at)}
                     </div>
-                    <Button variant="secondary" onClick={() => redeemReward(r.id)} disabled={busy} style={{ marginTop: theme.space.sm }}>
+                    <Button variant="secondary" onClick={() => redeemReward(r.id)} disabled={busy} style={{ marginTop: t.space.sm }}>
                       {cfg?.texts?.wallet?.redeem ?? "Canjear (staff)"}
                     </Button>
                   </div>
@@ -374,7 +386,7 @@ export default function WalletPage() {
           )}
         </Card>
 
-        <p style={{ marginTop: theme.space.lg, fontSize: 12, color: theme.color.camelDark, textAlign: "center" }}>
+        <p style={{ marginTop: t.space.lg, fontSize: 12, color: c.secondary, textAlign: "center" }}>
           {cfg?.texts?.wallet?.tip ?? "Guarda esta página en tu pantalla de inicio para acceder como app."}
         </p>
       </div>
