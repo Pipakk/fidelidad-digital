@@ -19,7 +19,7 @@ export const WheelSegmentSchema = z.object({
    */
   value: z.number().int().nonnegative().optional(),
   weight: z.number().int().positive().default(1),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 export type WheelSegment = z.infer<typeof WheelSegmentSchema>;
