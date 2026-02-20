@@ -51,7 +51,7 @@ export const BusinessConfigSchema = z
           })
           .default({}),
       })
-      .default({}),
+      .default({ theme: {} }),
 
     seo: z
       .object({
