@@ -123,7 +123,7 @@ export const BusinessConfigSchema = z
             back: z.string().min(1).default("Volver"),
             error_generic: z.string().min(1).default("Error"),
           })
-          .default({}),
+          .default({ loading: "Cargando...", back: "Volver", error_generic: "Error" }),
 
         landing: z
           .object({
@@ -141,7 +141,18 @@ export const BusinessConfigSchema = z
               .default("Consejo: añade esta web a tu pantalla de inicio para abrirla como app."),
             error_not_found: z.string().min(1).default("Bar no encontrado"),
           })
-          .default({}),
+          .default({
+            welcome_kicker: "Bienvenido a",
+            subtitle: "Acumula sellos y gana premios. Sin apps, solo QR.",
+            cta_start: "Empezar (crear cuenta / entrar)",
+            cta_wallet: "Ver mis sellos",
+            cta_wheel: "🎡 Girar ruleta",
+            cta_premium: "Ver premios",
+            logout: "Cerrar sesión",
+            privacy_line_1: "Al continuar aceptas la política de privacidad del establecimiento.",
+            privacy_line_2: "Consejo: añade esta web a tu pantalla de inicio para abrirla como app.",
+            error_not_found: "Bar no encontrado",
+          }),
 
         login: z
           .object({
@@ -161,7 +172,23 @@ export const BusinessConfigSchema = z
             validation_missing: z.string().min(1).default("Rellena email y contraseña"),
             validation_password_len: z.string().min(1).default("La contraseña debe tener al menos 6 caracteres"),
           })
-          .default({}),
+          .default({
+            title_kicker: "Acceso",
+            subtitle: "Guarda tu wallet y canjea premios.",
+            tab_signup: "Crear cuenta",
+            tab_login: "Entrar",
+            email_label: "Email",
+            email_placeholder: "tu@email.com",
+            password_label: "Contraseña",
+            password_placeholder: "********",
+            submit_signup: "Crear cuenta",
+            submit_login: "Entrar",
+            processing: "Procesando...",
+            hint_line_1: "MVP sin SMS: acceso con email y contraseña.",
+            hint_line_2: "Consejo: usa una contraseña de 8+ caracteres.",
+            validation_missing: "Rellena email y contraseña",
+            validation_password_len: "La contraseña debe tener al menos 6 caracteres",
+          }),
 
         wallet: z
           .object({
@@ -190,7 +217,26 @@ export const BusinessConfigSchema = z
             tip: z.string().min(1).default("Consejo: guarda esta página en tu pantalla de inicio para abrirla como app."),
             cta_wheel: z.string().min(1).default("🎡 Ruleta"),
           })
-          .default({}),
+          .default({
+            title_kicker: "Tu wallet",
+            section_stamps: "Tus sellos",
+            reward_for_completion: "Premio por completar:",
+            staff_actions_title: "Acciones (staff)",
+            staff_actions_subtitle: "El camarero introduce el PIN del bar para validar consumo o canjear premios.",
+            pin_placeholder: "PIN (ej. 1234)",
+            pin_missing_add_stamp: "Introduce el PIN del bar",
+            pin_missing_redeem: "Introduce el PIN del bar para canjear",
+            add_stamp: "Añadir 1 sello",
+            processing: "Procesando...",
+            rewards_title: "Premios activos",
+            rewards_empty: "Aún no tienes premios activos.",
+            rewards_expires_at: "Caduca:",
+            rewards_ready: "Listo para usar",
+            stamps_completed_message: "¡Objetivo completado! Tienes un nuevo premio para canjear.",
+            redeem: "Canjear (staff)",
+            tip: "Consejo: guarda esta página en tu pantalla de inicio para abrirla como app.",
+            cta_wheel: "🎡 Ruleta",
+          }),
 
         wheel: z
           .object({
@@ -204,7 +250,17 @@ export const BusinessConfigSchema = z
             cta_view_reward: z.string().min(1).default("Ver mi premio en Wallet"),
             need_login: z.string().min(1).default("Necesitas iniciar sesión"),
           })
-          .default({}),
+          .default({
+            title_kicker: "Ruleta de premios",
+            cta_wallet: "Mis premios",
+            cta_spin: "Girar ruleta",
+            spinning: "Girando...",
+            result_title: "Resultado",
+            saved_ok: "✅ Premio guardado en tu wallet.",
+            saved_fail: "⚠️ No se ha podido guardar el premio. (revisa /api/spin)",
+            cta_view_reward: "Ver mi premio en Wallet",
+            need_login: "Necesitas iniciar sesión",
+          }),
 
         api: z
           .object({
@@ -218,9 +274,92 @@ export const BusinessConfigSchema = z
             reward_wrong_user: z.string().min(1).default("Reward does not belong to this user"),
             cooldown_active: z.string().min(1).default("Wheel cooldown active"),
           })
-          .default({}),
+          .default({
+            missing_params: "Missing params",
+            bar_not_found: "Bar not found",
+            wheel_disabled: "Wheel disabled",
+            invalid_pin: "Invalid PIN",
+            daily_limit_reached: "Daily limit reached",
+            reward_not_found: "Reward not found",
+            reward_not_active: "Reward not active",
+            reward_wrong_user: "Reward does not belong to this user",
+            cooldown_active: "Wheel cooldown active",
+          }),
       })
-      .default({}),
+      .default({
+        common: { loading: "Cargando...", back: "Volver", error_generic: "Error" },
+        landing: {
+          welcome_kicker: "Bienvenido a",
+          subtitle: "Acumula sellos y gana premios. Sin apps, solo QR.",
+          cta_start: "Empezar (crear cuenta / entrar)",
+          cta_wallet: "Ver mis sellos",
+          cta_wheel: "🎡 Girar ruleta",
+          cta_premium: "Ver premios",
+          logout: "Cerrar sesión",
+          privacy_line_1: "Al continuar aceptas la política de privacidad del establecimiento.",
+          privacy_line_2: "Consejo: añade esta web a tu pantalla de inicio para abrirla como app.",
+          error_not_found: "Bar no encontrado",
+        },
+        login: {
+          title_kicker: "Acceso",
+          subtitle: "Guarda tu wallet y canjea premios.",
+          tab_signup: "Crear cuenta",
+          tab_login: "Entrar",
+          email_label: "Email",
+          email_placeholder: "tu@email.com",
+          password_label: "Contraseña",
+          password_placeholder: "********",
+          submit_signup: "Crear cuenta",
+          submit_login: "Entrar",
+          processing: "Procesando...",
+          hint_line_1: "MVP sin SMS: acceso con email y contraseña.",
+          hint_line_2: "Consejo: usa una contraseña de 8+ caracteres.",
+          validation_missing: "Rellena email y contraseña",
+          validation_password_len: "La contraseña debe tener al menos 6 caracteres",
+        },
+        wallet: {
+          title_kicker: "Tu wallet",
+          section_stamps: "Tus sellos",
+          reward_for_completion: "Premio por completar:",
+          staff_actions_title: "Acciones (staff)",
+          staff_actions_subtitle: "El camarero introduce el PIN del bar para validar consumo o canjear premios.",
+          pin_placeholder: "PIN (ej. 1234)",
+          pin_missing_add_stamp: "Introduce el PIN del bar",
+          pin_missing_redeem: "Introduce el PIN del bar para canjear",
+          add_stamp: "Añadir 1 sello",
+          processing: "Procesando...",
+          rewards_title: "Premios activos",
+          rewards_empty: "Aún no tienes premios activos.",
+          rewards_expires_at: "Caduca:",
+          rewards_ready: "Listo para usar",
+          stamps_completed_message: "¡Objetivo completado! Tienes un nuevo premio para canjear.",
+          redeem: "Canjear (staff)",
+          tip: "Consejo: guarda esta página en tu pantalla de inicio para abrirla como app.",
+          cta_wheel: "🎡 Ruleta",
+        },
+        wheel: {
+          title_kicker: "Ruleta de premios",
+          cta_wallet: "Mis premios",
+          cta_spin: "Girar ruleta",
+          spinning: "Girando...",
+          result_title: "Resultado",
+          saved_ok: "✅ Premio guardado en tu wallet.",
+          saved_fail: "⚠️ No se ha podido guardar el premio. (revisa /api/spin)",
+          cta_view_reward: "Ver mi premio en Wallet",
+          need_login: "Necesitas iniciar sesión",
+        },
+        api: {
+          missing_params: "Missing params",
+          bar_not_found: "Bar not found",
+          wheel_disabled: "Wheel disabled",
+          invalid_pin: "Invalid PIN",
+          daily_limit_reached: "Daily limit reached",
+          reward_not_found: "Reward not found",
+          reward_not_active: "Reward not active",
+          reward_wrong_user: "Reward does not belong to this user",
+          cooldown_active: "Wheel cooldown active",
+        },
+      }),
   })
   .strict();
 
