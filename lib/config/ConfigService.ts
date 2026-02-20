@@ -53,6 +53,13 @@ function cfgFromLegacy(bar: BusinessRow): Partial<BusinessConfig> {
     wheel: {
       enabled: typeof bar.wheel_enabled === "boolean" ? bar.wheel_enabled : true,
       cooldown_days: Number.isFinite(bar.wheel_cooldown_days as number) ? Number(bar.wheel_cooldown_days) : 7,
+      segments: [
+        { id: "stamp_1", label: "1 sello extra", type: "stamp" as const, value: 1, weight: 3, enabled: true },
+        { id: "none_1", label: "Sigue jugando", type: "none" as const, weight: 6, enabled: true },
+        { id: "reward_1", label: "5% dto próxima visita", type: "reward" as const, weight: 2, enabled: true },
+        { id: "reward_2", label: "Tapa gratis", type: "reward" as const, weight: 1, enabled: true },
+      ],
+      ui: {},
     },
   };
 }
