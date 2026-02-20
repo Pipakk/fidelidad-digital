@@ -122,6 +122,7 @@ export const BusinessConfigSchema = z
             cta_start: z.string().min(1).default("Empezar (crear cuenta / entrar)"),
             cta_wallet: z.string().min(1).default("Ver mis sellos"),
             cta_wheel: z.string().min(1).default("🎡 Girar ruleta"),
+            cta_premium: z.string().min(1).default("Ver premios"),
             logout: z.string().min(1).default("Cerrar sesión"),
             privacy_line_1: z.string().min(1).default("Al continuar aceptas la política de privacidad del establecimiento."),
             privacy_line_2: z
