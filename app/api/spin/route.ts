@@ -22,7 +22,8 @@ export async function POST(req: Request) {
 
     // Sin límite de tiradas: no se aplica cooldown.
 
-    const segments = (cfg.wheel.segments || []).filter((s) => s && s.enabled !== false);
+    const rawSegments: WheelSegment[] = cfg.wheel.segments ?? [];
+    const segments = rawSegments.filter((s) => s && s.enabled !== false);
     const chosen = pickWeighted(segments);
     if (!chosen) return NextResponse.json({ error: cfg.texts.api.wheel_disabled }, { status: 403 });
 
